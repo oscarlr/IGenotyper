@@ -50,7 +50,7 @@ class CommandLine:
                    "--out %s.sam "
                    "--sam "
                    "%s "
-                   "--nproc %s > /dev/null 2>&1" % tuple(args))
+                   "--nproc %s " % tuple(args))
         output_file = "%s.sam" % prefix
         self.run_command(command,output_file)
 

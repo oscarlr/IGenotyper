@@ -19,8 +19,8 @@ class CommandLine:
                 self.files.input_bam,
                 self.files.ccs_bam]
         command = ("ccs "
-                   "--numThreads %s "
-                   "--minPasses %s "               
+                   "--num-threads %s "
+                   "--min-passes %s "               
                    "%s "
                    "%s > /dev/null 2>&1" % tuple(args))
         output_file = "%s.pbi" % self.files.ccs_bam

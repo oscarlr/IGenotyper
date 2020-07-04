@@ -35,7 +35,7 @@ class FileManager():
         self.ccs_fastq = "%s/ccs.fastq" % self.tmp
         self.ccs_fastq_unedited = "%s/ccs.fastq" % self.tmp
 
-        self.ref = "%s/data/blasr_index/reference.fasta" % self.package_directory
+        self.ref = "%s/data/reference.fasta" % self.package_directory
         self.target_regions = "%s/data/target_regions.bed" % self.package_directory
 
         self.subreads_to_ref = "%s/subreads_to_ref.sorted.bam" % self.preprocess

@@ -23,7 +23,8 @@ class FileManager():
         folders = [
             self.outdir,
             self.preprocess,
-            self.alignments
+            self.alignments,
+            self.tmp
         ]
 
         create_folders(folders)

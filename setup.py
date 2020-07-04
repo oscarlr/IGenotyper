@@ -9,6 +9,7 @@ setup(
     author='Oscar Rodriguez',
     author_email='oscar.rodriguez@icahn.mssm.edu',
     description='',
+    package_data={'IGenotyper': ['data/*']},
     entry_points = {
         'console_scripts': ['IG = IGenotyper.main:main']
     }

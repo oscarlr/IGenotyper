@@ -11,7 +11,7 @@ def add_arguments(subparser):
     subparser.add_argument('--sample',metavar='SAMPLE',default="sample",help='Name of sample')
     subparser.add_argument('--threads',metavar='THREADS',default=1,help='Number of threads')
     subparser.add_argument('--mem',metavar='MEM',default=20,help='Memory for cluster')
-    subparser.add_argument('--cluster',metavar='CLUSTER',default=False, action='store_true', help='Use cluster')
+    subparser.add_argument('--cluster',default=False, action='store_true', help='Use cluster')
     subparser.add_argument('--queue', metavar='QUEUE',default="premium",help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME',default=24,help='Walltime for cluster')
     subparser.add_argument('--tmp', metavar='TMP', default="tmp", help='Temporary folder')

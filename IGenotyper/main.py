@@ -19,7 +19,7 @@ def main():
 
     missing_tools = check_tools()
     if len(missing_tools) != 0:
-        sys.exit("Install tools: %s" ",".join(missing_tools))
+        sys.exit("Install tools: %s" % ",".join(missing_tools))
 
     parser = argparse.ArgumentParser(description='Process IGH capture data')
     subparsers = parser.add_subparsers()

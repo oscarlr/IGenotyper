@@ -122,7 +122,7 @@ def run_phasing(
     cpu = CpuManager(threads,mem,cluster,queue,walltime)
     command_line_tools = CommandLine(files,cpu)
     pre_phase_processing(command_line_tools,sample)
-    phase_sequencing_data(files)
+    phase_sequencing_data(files,sample)
 
 def main(args):
     run_phasing(**vars(args))

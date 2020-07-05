@@ -39,6 +39,7 @@ class FileManager():
         self.target_regions = "%s/data/target_regions.bed" % self.package_directory
 
         self.subreads_to_ref = "%s/subreads_to_ref.sorted.bam" % self.preprocess
+        self.subreads_to_ref_phased = "%s/subreads_to_ref_phased.sorted.bam" % self.alignments
         self.ccs_to_ref = "%s/ccs_to_ref.sorted.bam" % self.preprocess
         self.ccs_to_ref_phased = "%s/ccs_to_ref_phased.sorted.bam" % self.alignments
 

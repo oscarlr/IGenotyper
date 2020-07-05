@@ -2,6 +2,7 @@
 import sys
 import argparse
 import importlib
+from IGenotyper.check import check_tools
 
 def main():
     commands = [
@@ -15,6 +16,10 @@ def main():
 
     if command_name not in commands:
         sys.exit("Please run one of the following commands: \n%s" % "\n".join(commands))
+
+    missing_tools = check_tools()
+    if len(missing_tools) != 0:
+        sys.exit("Install tools: %s" ",".join(missing_tools))
 
     parser = argparse.ArgumentParser(description='Process IGH capture data')
     subparsers = parser.add_subparsers()

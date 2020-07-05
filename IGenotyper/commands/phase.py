@@ -105,7 +105,7 @@ def phase_reads(bam,outbam,vcf):
 def phase_sequencing_data(files,sample):
     vcf = read_in_phased_vcf(files.phased_snvs_vcf,sample)
     phase_reads(files.ccs_to_ref,files.ccs_to_ref_phased,vcf)
-
+    phase_reads(files.subreads_to_ref,files.subreads_to_ref_phased,vcf)
 
 def run_phasing(
         bam,

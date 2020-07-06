@@ -98,7 +98,7 @@ class CommandLine:
                 self.files.snvs_vcf,
                 self.files.snp_candidates,
                 self.files.ccs_to_ref]
-        command = ("source activate whatshap-latest \n"
+        command = ("conda activate whatshap-latest \n"
                    "whatshap find_snv_candidates "
                    "--sample %s "
                    "%s "
@@ -111,7 +111,8 @@ class CommandLine:
                    "--reference %s "
                    "-o %s "
                    "%s "
-                   "%s > /dev/null 2>&1 \n" % tuple(args))
+                   "%s > /dev/null 2>&1 " 
+                   "conda deactivate " % tuple(args))
         self.run_command(command, self.files.snvs_vcf)
 
     def phase_genotype_snvs(self,sample_name):
@@ -120,7 +121,7 @@ class CommandLine:
                 self.files.phased_snvs_vcf,
                 self.files.snvs_vcf,
                 self.files.ccs_to_ref]
-        command = ("source activate whatshap-tool \n"
+        command = ("conda activate whatshap-latest \n"
                    "whatshap phase "
                    "--sample %s "
                    "--reference %s "

@@ -106,14 +106,14 @@ class CommandLine:
                    "%s "
                    "%s "
                    "--pacbio "
-                   "-o %s > /dev/null 2>&1 \n"
+                   "-o %s #> /dev/null 2>&1 \n"
                    "whatshap genotype "
                    "--sample %s "
                    "--ignore-read-groups "
                    "--reference %s "
                    "-o %s "
                    "%s "
-                   "%s > /dev/null 2>&1 " 
+                   "%s #> /dev/null 2>&1 " 
                    "conda deactivate " % tuple(args))
         self.run_command(command, self.files.snvs_vcf)
 
@@ -133,6 +133,6 @@ class CommandLine:
                    "--distrust-genotypes "
                    "-o %s "
                    "%s "
-                   "%s > /dev/null 2>&1\n"
+                   "%s #> /dev/null 2>&1\n"
                    "conda deactivate" % tuple(args))
         self.run_command(command, self.files.phased_snvs_vcf)

@@ -98,7 +98,9 @@ class CommandLine:
                 self.files.snvs_vcf,
                 self.files.snp_candidates,
                 self.files.ccs_to_ref]
-        command = ("conda init bash; conda activate whatshap-latest \n"
+        command = ("CONDA_BASE=$(conda info --base) \n"
+                   "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
+                   "conda activate whatshap-latest \n"
                    "whatshap find_snv_candidates "
                    "--sample %s "
                    "%s "
@@ -121,7 +123,9 @@ class CommandLine:
                 self.files.phased_snvs_vcf,
                 self.files.snvs_vcf,
                 self.files.ccs_to_ref]
-        command = ("conda init bash; conda activate whatshap-latest \n"
+        command = ("CONDA_BASE=$(conda info --base) \n"
+                   "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
+                   "conda activate whatshap-latest \n"
                    "whatshap phase "
                    "--sample %s "
                    "--reference %s "

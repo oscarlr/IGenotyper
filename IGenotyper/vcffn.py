@@ -28,7 +28,7 @@ class Vcf:
         self.variants_by_pos = {}
 
     def add_variant(self,variant):
-        if variant.chrom not in variant:
+        if variant.chrom not in self.variant_by_pos:
             self.variants_by_pos[variant.chrom] = {}
         self.variants_by_pos[variant.chrom][variant.pos] = variant
 

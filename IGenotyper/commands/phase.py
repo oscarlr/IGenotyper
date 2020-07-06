@@ -42,7 +42,7 @@ def calculate_tag(basetups,hap_dict):
     thres = .9
     for basetup in basetups:
         rpos, b, qual = basetup
-        b0, b1 = hap_dict[rpos]
+        b0, b1 = hap_dict[rpos].allele_bases
         if b == b1 or b == b0: # check to make sure the base is called
             if b == b0:
                 b0_bases += 1.0
@@ -73,7 +73,7 @@ def phase_read(read,snps,chrom):
                     qual = 8
                     if read.query_qualities != None:
                         qual = read.query_qualities[read_pos]
-                    base = read.query_sequence[read_pos]
+                    base = read.query_sequence[read_pos].upper()
                     base_tuples.append((ref_pos, base, qual))
     if len(base_tuples) > 0:
         read_group_tag = calculate_tag(base_tuples, snps[chrom])

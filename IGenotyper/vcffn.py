@@ -11,8 +11,8 @@ class Variant:
     def from_record_allele_bases(self,variant_record,sample_name):
         alleles = variant_record.genotype(sample_name)['GT'].split("|")
         alleles = map(int, alleles)
-        allele_bases = [record.REF]
-        for alt_base in record.ALT:
+        allele_bases = [variant_record.REF]
+        for alt_base in variant_record.ALT:
             allele_bases.append(alt_base)
         self.bases = map(lambda x: allele_bases[x], alleles)
 

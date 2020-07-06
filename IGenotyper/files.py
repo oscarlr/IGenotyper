@@ -24,6 +24,7 @@ class FileManager():
             self.outdir,
             self.preprocess,
             self.alignments,
+            self.variants,
             self.tmp
         ]
 

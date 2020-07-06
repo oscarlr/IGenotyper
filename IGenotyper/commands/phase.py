@@ -2,7 +2,7 @@
 from IGenotyper.cpu import CpuManager
 from IGenotyper.files import FileManager
 from IGenotyper.clt import CommandLine
-from IGenotyper.vcf import read_in_phased_vcf
+from IGenotyper.vcffn import read_in_phased_vcf
 from IGenotyper.bam import create_phased_bam_header
 
 import pysam

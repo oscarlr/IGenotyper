@@ -91,7 +91,7 @@ def phase_read(read,snps,chrom):
 def phase_reads(bam,outbam,vcf):
     phase_snps = vcf.phased_variants()
     unphased_bam = pysam.AlignmentFile(bam, 'rb')
-    phased_bam_header = create_phased_bam_header(bam)
+    phased_bam_header = create_phased_bam_header(unphased_bam)
     phased_bam = pysam.AlignmentFile(outbam,'wb',header=phased_bam_header)
     for read in unphased_bam.fetch():
         if read.is_unmapped:

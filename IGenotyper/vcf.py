@@ -45,10 +45,10 @@ class Vcf:
         return phased_variants_by_pos
 
 def read_in_phased_vcf(vcffn,sample_name):
-    vcf = Vcf()
+    vcf_file = Vcf()
     vcf_reader = vcf.Reader(open(vcffn, 'r'))
     for record in vcf_reader:
         variant = Variant()
         variant.from_record(record,sample_name)
-        vcf.add_variant(variant)
-    return vcf
+        vcf_file.add_variant(variant)
+    return vcf_file

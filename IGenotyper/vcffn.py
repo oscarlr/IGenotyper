@@ -14,7 +14,7 @@ class Variant:
         allele_bases = [variant_record.REF]
         for alt_base in variant_record.ALT:
             allele_bases.append(alt_base)
-        self.bases = map(lambda x: allele_bases[x], alleles)
+        self.allele_bases = map(lambda x: allele_bases[x], alleles)
 
     def from_record(self,variant_record,sample_name):
         self.chrom = variant_record.CHROM

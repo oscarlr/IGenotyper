@@ -107,7 +107,7 @@ def phase_reads(bam,outbam,vcf):
         phased_bam.write(tagged_read)
     unphased_bam.close()
     phased_bam.close()
-    pysam.index(phased_bam)
+    pysam.index(outbam)
 
 def phase_sequencing_data(files,sample):
     vcf = read_in_phased_vcf(files.phased_snvs_vcf,sample)

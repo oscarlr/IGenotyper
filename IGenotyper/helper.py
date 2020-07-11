@@ -1,5 +1,6 @@
 #!/bin/env python
 import os
+import sys
 from string import Template
 
 def create_folders(folders):

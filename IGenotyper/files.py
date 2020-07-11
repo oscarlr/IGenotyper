@@ -18,6 +18,7 @@ class FileManager():
         self.preprocess = "%s/preprocessed" % self.outdir
         self.variants = "%s/variants" % self.outdir
         self.alignments = "%s/alignments" % self.outdir
+        self.assembly = "%s/assembly" % self.outdir
         self.alleles = "%s/alleles" % self.outdir
         self.log = "%s/logs" % self.outdir
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
@@ -28,8 +29,9 @@ class FileManager():
             self.alignments,
             self.variants,
             self.alleles,
+            self.assembly,
             self.tmp,
-            self.log
+            self.log,
         ]
 
         create_folders(folders)
@@ -53,6 +55,9 @@ class FileManager():
         self.phased_snvs_vcf = "%s/snvs_phased_from_ccs.vcf" % self.variants
 
         self.alleles_matches_in_ccs = "%s/alleles_matches_in_ccs.txt" % self.alleles
+
+        self.assembly_fasta = "%s/contigs.fasta" % self.assembly
+        self.assembly_fastq = "%s/contigs.fastq" % self.assembly
 
         self.phased_blocks = "%s/phased_blocks.txt" % self.variants
         self.input_args = "%s/args.json" % self.log

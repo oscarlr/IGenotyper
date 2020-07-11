@@ -6,6 +6,7 @@ from IGenotyper.helper import show_value,create_directory,write_to_bashfile
 
 import os
 import pybedtools
+from Bio import SeqIO
 from collections import namedtuple
 
 def add_arguments(subparser):
@@ -92,6 +93,25 @@ def get_assembly_scripts(files,cpu,phased_blocks):
         assembly_scripts.append(assembly_script)
     return assembly_scripts
 
+
+def combine_sequence(files,phased_blocks,outfile,type_):
+    seqs = []
+    for chrom, start, end, hap in phased_blocks:
+        dir = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
+        contig = "%s/contigs.%s" % (dir,type_)
+        if os.path.isfile(contig):
+            contigs = list(SeqIO.parse(contig,type_))
+            total_contigs = len(contigs)
+            for i,record in enumerate(contigs):
+                record.id = "c=%s:%s-%s_h=%s_i=%s_t=%s_/0/0_0" % (chrom,start,end,hap,i,total_contigs)
+                record.description = ""
+                seqs.append(record)
+    SeqIO.write(seqs,outfile,type_)
+
+def combine_assembly_sequences(files,phased_blocks):
+    combine_sequence(files,phased_blocks,files.assembly_fasta,"fasta")
+    combine_sequence(files,phased_blocks,files.assembly_fastq,"fastq")
+
 def run_assembly(
         threads,
         mem,
@@ -109,6 +129,7 @@ def run_assembly(
     phased_blocks = get_phased_blocks(files)
     assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
     command_line_tools.run_assembly_scripts(assembly_scripts)
+    combine_assembly_sequences(files,phased_blocks)
 
 def main(args):
     run_assembly(**vars(args))

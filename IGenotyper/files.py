@@ -5,7 +5,7 @@ from helper import create_folders
 class FileManager():
     def __init__(self,outdir,bam=None,tmp = "tmp"):
         self.outdir = outdir
-        self.input_bam = ba
+        self.input_bam = bam
         self.tmp = tmp
 
         if tmp == "tmp":

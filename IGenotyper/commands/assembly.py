@@ -15,6 +15,7 @@ def add_arguments(subparser):
     subparser.add_argument('--queue', metavar='QUEUE', default="premium", help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME', default=2, help='Walltime for cluster')
     subparser.add_argument('--sample', metavar='SAMPLE', default="sample", help='Name of sample')
+    subparser.add_argument('bam', metavar='BAM', help='PacBio bam file')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
 def get_phased_regions(files,min_length=500,min_variants=2):

@@ -80,8 +80,12 @@ then
         gcpp \
         --reference ${output}/canu/canu.contigs.fasta \
         -j ${threads} \
-        -o ${output}/contigs.fastq \
         -o ${output}/contigs.fasta \
+        ${output}/canu/reads_to_canu_contigs.sorted.bam
+        gcpp \
+        --reference ${output}/canu/canu.contigs.fasta \
+        -j ${threads} \
+        -o ${output}/contigs.fastq \
         ${output}/canu/reads_to_canu_contigs.sorted.bam
     fi
 fi

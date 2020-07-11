@@ -3,9 +3,9 @@ import os
 from helper import create_folders
 
 class FileManager():
-    def __init__(self,outdir,bam,tmp = "tmp"):
+    def __init__(self,outdir,bam=None,tmp = "tmp"):
         self.outdir = outdir
-        self.input_bam = bam
+        self.input_bam = ba
         self.tmp = tmp
 
         if tmp == "tmp":
@@ -19,6 +19,7 @@ class FileManager():
         self.variants = "%s/variants" % self.outdir
         self.alignments = "%s/alignments" % self.outdir
         self.alleles = "%s/alleles" % self.outdir
+        self.log = "%s/logs" % self.outdir
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
 
         folders = [
@@ -27,7 +28,8 @@ class FileManager():
             self.alignments,
             self.variants,
             self.alleles,
-            self.tmp
+            self.tmp,
+            self.log
         ]
 
         create_folders(folders)
@@ -51,3 +53,8 @@ class FileManager():
         self.phased_snvs_vcf = "%s/snvs_phased_from_ccs.vcf" % self.variants
 
         self.alleles_matches_in_ccs = "%s/alleles_matches_in_ccs.txt" % self.alleles
+
+        self.phased_blocks = "%s/phased_blocks.txt" % self.variants
+        self.input_args = "%s/args.json" % self.log
+        self.assembly_script = "%s/data/assembly.sh" % self.package_directory
+        self.scripts = "%s/scripts" % self.package_directory

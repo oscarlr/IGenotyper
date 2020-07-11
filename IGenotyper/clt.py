@@ -1,5 +1,6 @@
 #!/bin/env python
 import os
+from lsf.lsf import Lsf
 from helper import non_emptyfile
 
 class CommandLine:
@@ -136,3 +137,30 @@ class CommandLine:
                    "%s #> /dev/null 2>&1\n"
                    "conda deactivate" % tuple(args))
         self.run_command(command, self.files.phased_snvs_vcf)
+
+    def phase_blocks(self,sample_name):
+        args = [sample_name,
+                self.files.phased_blocks,
+                self.files.phased_snvs_vcf]
+        command = ("CONDA_BASE=$(conda info --base) \n"
+                   "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
+                   "conda activate whatshap-latest \n"
+                   "whatshap stats "
+                   "--sample %s "
+                    "--block-list %s "
+                   "%s #> /dev/null 2>&1\n"
+                   "conda deactivate" % tuple(args))
+        self.run_command(command, self.files.phased_snvs_vcf)
+
+    def run_assembly_scripts(self,assembly_scripts):
+        if not self.cpu.cluster:
+            for script in assembly_scripts:
+                command = "sh %s" % script
+                os.system(command)
+        else:
+            hpc = Lsf()
+            for job in assembly_scripts:
+                hpc.config(cpu=self.cpu.threads,walltime=self.cpu.walltime,
+                           memory=self.cpu.mem,queue=self.cpu.queue)
+                hpc.submit("%s" % job)
+            hpc.wait()

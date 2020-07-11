@@ -6,6 +6,7 @@ from IGenotyper.vcffn import read_in_phased_vcf
 from IGenotyper.bam import create_phased_bam_header
 
 import pysam
+from shutil import copyfile
 
 def add_arguments(subparser):
     subparser.add_argument('--sample',metavar='SAMPLE',default="sample",help='Name of sample')
@@ -15,16 +16,21 @@ def add_arguments(subparser):
     subparser.add_argument('--queue', metavar='QUEUE',default="premium",help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME',default=24,help='Walltime for cluster')
     subparser.add_argument('--tmp', metavar='TMP', default="tmp", help='Temporary folder')
+    subparser.add_argument('--input_vcf', metavar='VCF', help='Phased VCF file to phase reads')
     subparser.add_argument('bam', metavar='BAM', help='PacBio bam file')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
-def pre_phase_processing(command_line_tools,sample):
+def pre_phase_processing(command_line_tools,sample,input_vcf):
     command_line_tools.generate_ccs_reads()
     command_line_tools.turn_ccs_reads_to_fastq()
     command_line_tools.map_subreads()
     command_line_tools.map_ccs_reads()
-    command_line_tools.genotype_snvs_from_ccs(sample)
-    command_line_tools.phase_genotype_snvs(sample)
+    if input_vcf is not None:
+    # Do I need to phase, check for input
+        command_line_tools.genotype_snvs_from_ccs(sample)
+        command_line_tools.phase_genotype_snvs(sample)
+    else:
+        copyfile(input_vcf, command_line_tools.files.phased_snvs_vcf)
 
 def create_tag(hap):
     haptag = ("RG", str(hap), "Z")
@@ -116,12 +122,13 @@ def run_phasing(
         cluster,
         queue,
         walltime,
+        input_vcf,
         tmp
 ):
     files = FileManager(outdir,bam,tmp)
     cpu = CpuManager(threads,mem,cluster,queue,walltime)
     command_line_tools = CommandLine(files,cpu)
-    pre_phase_processing(command_line_tools,sample)
+    pre_phase_processing(command_line_tools,sample,input_vcf)
     phase_sequencing_data(files,sample)
 
 def main(args):

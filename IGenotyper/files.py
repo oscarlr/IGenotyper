@@ -3,7 +3,7 @@ import os
 from helper import create_folders
 
 class FileManager():
-    def __init__(self,outdir,bam,tmp):
+    def __init__(self,outdir,bam,tmp = "tmp"):
         self.outdir = outdir
         self.input_bam = bam
         self.tmp = tmp
@@ -18,6 +18,7 @@ class FileManager():
         self.preprocess = "%s/preprocessed" % self.outdir
         self.variants = "%s/variants" % self.outdir
         self.alignments = "%s/alignments" % self.outdir
+        self.alleles = "%s/alleles" % self.outdir
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
 
         folders = [
@@ -25,6 +26,7 @@ class FileManager():
             self.preprocess,
             self.alignments,
             self.variants,
+            self.alleles,
             self.tmp
         ]
 
@@ -47,3 +49,5 @@ class FileManager():
         self.snp_candidates = "%s/snvs_candidates.vcf" % self.tmp
         self.snvs_vcf = "%s/snvs_from_ccs.vcf" % self.variants
         self.phased_snvs_vcf = "%s/snvs_phased_from_ccs.vcf" % self.variants
+
+        self.alleles_matches_in_ccs = "%s/alleles_matches_in_ccs.txt" % self.alleles

@@ -73,6 +73,12 @@ class CommandLine:
         self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
         self.select_target_reads(sorted_bam_tmp,self.files.subreads_to_ref)
 
+    def map_assembly(self):
+        print "Mapping assembly..."
+        prefix = "%s/assembly_to_ref" % self.files.tmp
+        self.map_reads_with_blasr(self.files.assembly_fastq,prefix,self.files.ref)
+        self.sam_to_sorted_bam(prefix,self.files.assembly_to_ref)
+
     def select_target_reads(self,bam_file,igh_bam_file):
         ## add aim regions
         args = [bam_file,self.files.target_regions,igh_bam_file,

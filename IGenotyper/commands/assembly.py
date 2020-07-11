@@ -130,6 +130,7 @@ def run_assembly(
     assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
     command_line_tools.run_assembly_scripts(assembly_scripts)
     combine_assembly_sequences(files,phased_blocks)
+    command_line_tools.map_assembly()
 
 def main(args):
     run_assembly(**vars(args))

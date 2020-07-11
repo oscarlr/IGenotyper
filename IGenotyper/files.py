@@ -58,6 +58,7 @@ class FileManager():
 
         self.assembly_fasta = "%s/contigs.fasta" % self.assembly
         self.assembly_fastq = "%s/contigs.fastq" % self.assembly
+        self.assembly_to_ref = "%s/contigs_to_ref.sorted.bam" % self.alignments
 
         self.phased_blocks = "%s/phased_blocks.txt" % self.variants
         self.input_args = "%s/args.json" % self.log

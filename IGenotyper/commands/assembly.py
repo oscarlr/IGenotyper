@@ -99,6 +99,7 @@ def run_assembly(
         queue,
         walltime,
         sample,
+        bam,
         outdir
 ):
     files = FileManager(outdir)

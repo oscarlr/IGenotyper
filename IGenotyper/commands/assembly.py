@@ -102,7 +102,7 @@ def run_assembly(
         bam,
         outdir
 ):
-    files = FileManager(outdir,bam)
+    files = FileManager(outdir,bam=bam)
     cpu = CpuManager(threads, mem, cluster, queue, walltime)
     command_line_tools = CommandLine(files,cpu)
     command_line_tools.phase_blocks(sample)

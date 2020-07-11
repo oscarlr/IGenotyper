@@ -150,7 +150,7 @@ class CommandLine:
                     "--block-list %s "
                    "%s #> /dev/null 2>&1\n"
                    "conda deactivate" % tuple(args))
-        self.run_command(command, self.files.phased_snvs_vcf)
+        self.run_command(command, self.files.phased_blocks)
 
     def run_assembly_scripts(self,assembly_scripts):
         if not self.cpu.cluster:

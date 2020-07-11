@@ -4,7 +4,9 @@ from IGenotyper.files import FileManager
 from IGenotyper.clt import CommandLine
 from IGenotyper.vcffn import read_in_phased_vcf
 from IGenotyper.bam import create_phased_bam_header
+from IGenotyper.helper import non_emptyfile
 
+import json
 import pysam
 from shutil import copyfile
 
@@ -94,24 +96,35 @@ def phase_read(read,snps,chrom):
     return read
 
 def phase_reads(bam,outbam,vcf):
-    phase_snps = vcf.phased_variants()
-    unphased_bam = pysam.AlignmentFile(bam, 'rb')
-    phased_bam_header = create_phased_bam_header(unphased_bam)
-    phased_bam = pysam.AlignmentFile(outbam,'wb',header=phased_bam_header)
-    for read in unphased_bam.fetch():
-        if read.is_unmapped:
-            continue
-        chrom = unphased_bam.get_reference_name(read.reference_id)
-        tagged_read = phase_read(read,phase_snps,chrom)
-        phased_bam.write(tagged_read)
-    unphased_bam.close()
-    phased_bam.close()
-    pysam.index(outbam)
+    if not non_emptyfile("%s.bai" % outbam):
+        phase_snps = vcf.phased_variants()
+        unphased_bam = pysam.AlignmentFile(bam, 'rb')
+        phased_bam_header = create_phased_bam_header(unphased_bam)
+        phased_bam = pysam.AlignmentFile(outbam,'wb',header=phased_bam_header)
+        for read in unphased_bam.fetch():
+            if read.is_unmapped:
+                continue
+            chrom = unphased_bam.get_reference_name(read.reference_id)
+            tagged_read = phase_read(read,phase_snps,chrom)
+            phased_bam.write(tagged_read)
+        unphased_bam.close()
+        phased_bam.close()
+        pysam.index(outbam)
 
 def phase_sequencing_data(files,sample):
     vcf = read_in_phased_vcf(files.phased_snvs_vcf,sample)
     phase_reads(files.ccs_to_ref,files.ccs_to_ref_phased,vcf)
     phase_reads(files.subreads_to_ref,files.subreads_to_ref_phased,vcf)
+
+def save_parameters(files,sample,input_vcf):
+    paramaters = {
+        "bam": files.input_bam,
+        "sample": sample,
+        "input_vcf": input_vcf,
+        "tmp": files.tmp
+    }
+    with open(files.input_args,'w') as fh:
+        json.dump(paramaters,fh,sort_keys=True, indent=4)
 
 def run_phasing(
         bam,
@@ -130,6 +143,7 @@ def run_phasing(
     command_line_tools = CommandLine(files,cpu)
     pre_phase_processing(command_line_tools,sample,input_vcf)
     phase_sequencing_data(files,sample)
+    save_parameters(files,sample,input_vcf)
 
 def main(args):
     run_phasing(**vars(args))

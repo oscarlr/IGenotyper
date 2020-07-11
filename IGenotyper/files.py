@@ -1,6 +1,7 @@
 #!/bin/env python
 import os
-from helper import create_folders
+import json
+from helper import create_folders,non_emptyfile
 
 class FileManager():
     def __init__(self,outdir,bam=None,tmp = "tmp"):
@@ -14,6 +15,12 @@ class FileManager():
         self.folder_structure()
         self.file_structure()
 
+        if non_emptyfile(self.input_args):
+            with open(self.input_args, 'r') as fh:
+                phasing_args = json.load(fh)
+            self.input_bam = phasing_args["bam"]
+            self.tmp = phasing_args["tmp"]
+
     def folder_structure(self):
         self.preprocess = "%s/preprocessed" % self.outdir
         self.variants = "%s/variants" % self.outdir
@@ -22,6 +29,7 @@ class FileManager():
         self.alleles = "%s/alleles" % self.outdir
         self.log = "%s/logs" % self.outdir
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
+        self.scripts = "%s/scripts" % self.package_directory
 
         folders = [
             self.outdir,
@@ -63,4 +71,3 @@ class FileManager():
         self.phased_blocks = "%s/phased_blocks.txt" % self.variants
         self.input_args = "%s/args.json" % self.log
         self.assembly_script = "%s/data/assembly.sh" % self.package_directory
-        self.scripts = "%s/scripts" % self.package_directory

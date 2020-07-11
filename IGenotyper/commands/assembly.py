@@ -5,6 +5,7 @@ from IGenotyper.clt import CommandLine
 from IGenotyper.helper import show_value,create_directory,write_to_bashfile
 
 import os
+import json
 import pybedtools
 from Bio import SeqIO
 from collections import namedtuple
@@ -15,8 +16,6 @@ def add_arguments(subparser):
     subparser.add_argument('--cluster', default=False, action='store_true', help='Use cluster')
     subparser.add_argument('--queue', metavar='QUEUE', default="premium", help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME', default=2, help='Walltime for cluster')
-    subparser.add_argument('--sample', metavar='SAMPLE', default="sample", help='Name of sample')
-    subparser.add_argument('bam', metavar='BAM', help='PacBio bam file')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
 def get_phased_regions(files,min_length=500,min_variants=2):
@@ -118,11 +117,14 @@ def run_assembly(
         cluster,
         queue,
         walltime,
-        sample,
-        bam,
         outdir
 ):
-    files = FileManager(outdir,bam=bam)
+    files = FileManager(outdir)
+
+    with open(files.input_args,'r') as fh:
+        phasing_args = json.load(fh)
+    sample = phasing_args["sample"]
+
     cpu = CpuManager(threads, mem, cluster, queue, walltime)
     command_line_tools = CommandLine(files,cpu)
     command_line_tools.phase_blocks(sample)

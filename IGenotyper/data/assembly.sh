@@ -77,8 +77,8 @@ then
     if [ ! -s ${output}/contigs.fastq ]
     then
         samtools faidx ${output}/canu/canu.contigs.fasta
-        variantCaller \
-        --referenceFilename ${output}/canu/canu.contigs.fasta \
+        gcpp \
+        --reference ${output}/canu/canu.contigs.fasta \
         -j ${threads} \
         -o ${output}/contigs.fastq \
         -o ${output}/contigs.fasta \

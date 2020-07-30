@@ -18,7 +18,7 @@ class Variant:
 
     def from_record(self,variant_record,sample_name):
         self.chrom = variant_record.CHROM
-        self.pos = variant_record.POS
+        self.pos = int(variant_record.POS) - 1
         if "|" in variant_record.genotype(sample_name)['GT']:
             self.phased = True
             self.from_record_allele_bases(variant_record,sample_name)

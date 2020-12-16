@@ -133,7 +133,6 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.4=h0b5b093_3
   - pip:
-    - igenotyper==1.1
     - pybedtools==0.8.1
 prefix: /sc/hydra/projects/sharpa01a/rodrio10-hydra/miniconda2/envs/IGv2
 

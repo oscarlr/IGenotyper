@@ -7,7 +7,8 @@ from IGenotyper.check import check_tools
 def main():
     commands = [
         "phase",
-        "assembly"
+        "assembly",
+        "detect"
     ]
 
     if len(sys.argv) < 2:

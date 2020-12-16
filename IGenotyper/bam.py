@@ -17,3 +17,4 @@ def create_phased_bam_header(unphased_bam):
     phased_bam_header = unphased_bam.header.to_dict()
     phased_bam_header["RG"] = [readgroup_unphased,readgroup_hap1,readgroup_hap2]
     return phased_bam_header
+

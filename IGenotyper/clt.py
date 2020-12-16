@@ -69,9 +69,11 @@ class CommandLine:
         print "Mapping subreads..."
         prefix = "%s/subreads_to_ref" % self.files.tmp
         sorted_bam_tmp = "%s.sorted.bam" % prefix
-        self.map_reads_with_blasr(self.files.input_bam,prefix,self.files.ref)
-        self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
-        self.select_target_reads(sorted_bam_tmp,self.files.subreads_to_ref)
+        if not non_emptyfile(self.files.subreads_to_ref):
+            if not non_emptyfile("%s.bai" % sorted_bam_tmp):
+                self.map_reads_with_blasr(self.files.input_bam,prefix,self.files.ref)
+                self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
+            self.select_target_reads(sorted_bam_tmp,self.files.subreads_to_ref)
 
     def map_assembly(self):
         print "Mapping assembly..."
@@ -91,9 +93,11 @@ class CommandLine:
         print "Mapping CCS reads..."
         prefix = "%s/ccs_to_ref" % self.files.tmp
         sorted_bam_tmp = "%s.sorted.bam" % prefix
-        self.map_reads_with_blasr(self.files.ccs_fastq,prefix,self.files.ref)
-        self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
-        self.select_target_reads(sorted_bam_tmp,self.files.ccs_to_ref)
+        if not non_emptyfile(self.files.ccs_to_ref):
+            if not non_emptyfile("%s.bai" % sorted_bam_tmp):
+                self.map_reads_with_blasr(self.files.ccs_fastq,prefix,self.files.ref)
+                self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
+            self.select_target_reads(sorted_bam_tmp,self.files.ccs_to_ref)
 
     def genotype_snvs_from_ccs(self,sample_name):
         args = [sample_name,

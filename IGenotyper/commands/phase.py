@@ -4,8 +4,10 @@ from IGenotyper.files import FileManager
 from IGenotyper.clt import CommandLine
 from IGenotyper.vcffn import read_in_phased_vcf
 from IGenotyper.bam import create_phased_bam_header
-from IGenotyper.helper import non_emptyfile
+from IGenotyper.helper import non_emptyfile,clean_up
+from rephase import fix_phased_alignments
 
+import os
 import json
 import pysam
 from shutil import copyfile
@@ -23,15 +25,16 @@ def add_arguments(subparser):
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
 def pre_phase_processing(command_line_tools,sample,input_vcf):
-    command_line_tools.generate_ccs_reads()
-    command_line_tools.turn_ccs_reads_to_fastq()
-    command_line_tools.map_subreads()
-    command_line_tools.map_ccs_reads()
-    if input_vcf is None:
-        command_line_tools.genotype_snvs_from_ccs(sample)
-        command_line_tools.phase_genotype_snvs(sample)
-    else:
-        copyfile(input_vcf, command_line_tools.files.phased_snvs_vcf)
+    if not non_emptyfile(command_line_tools.files.phased_snvs_vcf):
+        command_line_tools.generate_ccs_reads()
+        command_line_tools.turn_ccs_reads_to_fastq()
+        command_line_tools.map_ccs_reads()
+        command_line_tools.map_subreads()
+        if input_vcf is None:
+            command_line_tools.genotype_snvs_from_ccs(sample)
+            command_line_tools.phase_genotype_snvs(sample)
+        else:
+            copyfile(input_vcf, command_line_tools.files.phased_snvs_vcf)
 
 def create_tag(hap):
     haptag = ("RG", str(hap), "Z")
@@ -116,6 +119,7 @@ def phase_sequencing_data(files,sample):
     phase_reads(files.ccs_to_ref,files.ccs_to_ref_phased,vcf)
     phase_reads(files.subreads_to_ref,files.subreads_to_ref_phased,vcf)
 
+            
 def save_parameters(files,sample,input_vcf):
     paramaters = {
         "bam": files.input_bam,
@@ -139,11 +143,18 @@ def run_phasing(
         tmp
 ):
     files = FileManager(outdir,bam,tmp)
-    cpu = CpuManager(threads,mem,cluster,queue,walltime)
-    command_line_tools = CommandLine(files,cpu)
-    pre_phase_processing(command_line_tools,sample,input_vcf)
-    phase_sequencing_data(files,sample)
-    save_parameters(files,sample,input_vcf)
-
+    if not non_emptyfile(files.input_args):
+        cpu = CpuManager(threads,mem,cluster,queue,walltime)
+        command_line_tools = CommandLine(files,cpu)    
+        pre_phase_processing(command_line_tools,sample,input_vcf)
+        phase_sequencing_data(files,sample)
+        if input_vcf is None:
+            iterations = 2
+            for iteration in range(0,iterations):
+                fix_phased_alignments(files,sample,command_line_tools,iteration)
+                phase_sequencing_data(files,sample)
+        save_parameters(files,sample,input_vcf)
+    clean_up(files)
+    
 def main(args):
     run_phasing(**vars(args))

@@ -52,7 +52,13 @@ class FileManager():
 
         self.ref = "%s/data/reference.fasta" % self.package_directory
         self.target_regions = "%s/data/target_regions.bed" % self.package_directory
-
+        self.sv_coords = "%s/data/sv_coords.bed" % self.package_directory
+        self.introns = "%s/data/introns.bed" % self.package_directory
+        self.lpart1 = "%s/data/lpart1.bed" % self.package_directory
+        self.rss = "%s/data/rss.bed" % self.package_directory
+        self.gene_coords = "%s/data/gene_coords.bed" % self.package_directory
+        self.vdj_coords = "%s/data/vdj_coords.bed" % self.package_directory
+        
         self.subreads_to_ref = "%s/subreads_to_ref.sorted.bam" % self.preprocess
         self.subreads_to_ref_phased = "%s/subreads_to_ref_phased.sorted.bam" % self.alignments
         self.ccs_to_ref = "%s/ccs_to_ref.sorted.bam" % self.preprocess
@@ -61,6 +67,7 @@ class FileManager():
         self.snp_candidates = "%s/snvs_candidates.vcf" % self.tmp
         self.snvs_vcf = "%s/snvs_from_ccs.vcf" % self.variants
         self.phased_snvs_vcf = "%s/snvs_phased_from_ccs.vcf" % self.variants
+        self.snvs_assembly_vcf = "%s/snvs_assembly.vcf" % self.variants
 
         self.alleles_matches_in_ccs = "%s/alleles_matches_in_ccs.txt" % self.alleles
 

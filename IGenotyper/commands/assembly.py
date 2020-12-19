@@ -2,13 +2,12 @@
 from IGenotyper.cpu import CpuManager
 from IGenotyper.files import FileManager
 from IGenotyper.clt import CommandLine
-from IGenotyper.helper import show_value,create_directory,write_to_bashfile,non_emptyfile
+from IGenotyper.helper import show_value,create_directory,write_to_bashfile,non_emptyfile,get_phased_blocks
 
 import os
 import json
 import pybedtools
 from Bio import SeqIO
-from collections import namedtuple
 
 def add_arguments(subparser):
     subparser.add_argument('--threads', metavar='THREADS', default=1, help='Number of threads')
@@ -18,41 +17,41 @@ def add_arguments(subparser):
     subparser.add_argument('--walltime', metavar='WALLTIME', default=2, help='Walltime for cluster')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
-def get_phased_regions(files,min_length=500,min_variants=2):
-    blocks = []
-    Block = namedtuple('Block', ['sample','chrom','start_1','start','end','num_variants'])
-    with open(files.phased_blocks, 'r') as fh:
-        header = fh.readline()
-        for line in fh:
-            line = line.rstrip().split('\t')
-            block = Block._make(line)
-            if int(block.num_variants) < min_variants:
-                continue
-            if (int(block.end) - int(block.start)) < min_length:
-                continue
-            blocks.append([block.chrom, int(block.start), int(block.end)])
-    return sorted(blocks, key=lambda x: x[1])
+# def get_phased_regions(files,min_length=500,min_variants=2):
+#     blocks = []
+#     Block = namedtuple('Block', ['sample','chrom','start_1','start','end','num_variants'])
+#     with open(files.phased_blocks, 'r') as fh:
+#         header = fh.readline()
+#         for line in fh:
+#             line = line.rstrip().split('\t')
+#             block = Block._make(line)
+#             if int(block.num_variants) < min_variants:
+#                 continue
+#             if (int(block.end) - int(block.start)) < min_length:
+#                 continue
+#             blocks.append([block.chrom, int(block.start), int(block.end)])
+#     return sorted(blocks, key=lambda x: x[1])
 
-def add_haplotype_to_blocks(phased_blocks,regions,haplotype):
-    for region in regions:
-        block = [
-            show_value(region.chrom),
-            show_value(region.start),
-            show_value(region.end),
-            haplotype
-            ]
-        phased_blocks.append(block)
-    return phased_blocks
+# def add_haplotype_to_blocks(phased_blocks,regions,haplotype):
+#     for region in regions:
+#         block = [
+#             show_value(region.chrom),
+#             show_value(region.start),
+#             show_value(region.end),
+#             haplotype
+#             ]
+#         phased_blocks.append(block)
+#     return phased_blocks
 
-def get_phased_blocks(files):
-    phased_blocks = []
-    target_regions = pybedtools.BedTool(files.target_regions)
-    phased_regions = pybedtools.BedTool(get_phased_regions(files))
-    unphased_regions = target_regions.subtract(phased_regions)
-    for haplotype in ["1","2"]:
-        phased_blocks = add_haplotype_to_blocks(phased_blocks,phased_regions,haplotype)
-    phased_blocks = add_haplotype_to_blocks(phased_blocks,unphased_regions,"0")
-    return phased_blocks
+# def get_phased_blocks(files):
+#     phased_blocks = []
+#     target_regions = pybedtools.BedTool(files.target_regions)
+#     phased_regions = pybedtools.BedTool(get_phased_regions(files))
+#     unphased_regions = target_regions.subtract(phased_regions)
+#     for haplotype in ["1","2"]:
+#         phased_blocks = add_haplotype_to_blocks(phased_blocks,phased_regions,haplotype)
+#     phased_blocks = add_haplotype_to_blocks(phased_blocks,unphased_regions,"0")
+#     return phased_blocks
 
 def region_assembled(directory):
     assembled = False

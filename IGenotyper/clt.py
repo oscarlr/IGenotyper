@@ -11,6 +11,7 @@ class CommandLine:
     def run_command(self,command,output_file):
         if not non_emptyfile(output_file):
             os.system(command)
+            
 
     def generate_ccs_reads(self):
         print "Generating CCS reads..."
@@ -174,3 +175,14 @@ class CommandLine:
                            memory=self.cpu.mem,queue=self.cpu.queue)
                 hpc.submit("%s" % job)
             hpc.wait()
+
+    def run_kalign(self,fastafn,clufn):
+        #| sed 's/Kalign/CLUSTAL/g' > ${dir}/msa.clu
+        # s=100
+        # e=0.85
+        # t=0.45
+        # m=0
+        # args = [s,e,t,m,fastafn,clufn]
+        #args = [fastafn,clufn]
+        command = "kalign -i %s -f clu -o %s" % (fastafn,clufn)
+        self.run_command(command,clufn)

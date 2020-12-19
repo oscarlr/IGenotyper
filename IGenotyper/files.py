@@ -27,6 +27,7 @@ class FileManager():
         self.alignments = "%s/alignments" % self.outdir
         self.assembly = "%s/assembly" % self.outdir
         self.alleles = "%s/alleles" % self.outdir
+        self.msa = "%s/variants/msa" % self.outdir
         self.log = "%s/logs" % self.outdir
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
         self.scripts = "%s/scripts" % self.package_directory
@@ -40,6 +41,7 @@ class FileManager():
             self.assembly,
             self.tmp,
             self.log,
+            self.msa
         ]
 
         create_folders(folders)
@@ -68,7 +70,9 @@ class FileManager():
         self.snvs_vcf = "%s/snvs_from_ccs.vcf" % self.variants
         self.phased_snvs_vcf = "%s/snvs_phased_from_ccs.vcf" % self.variants
         self.snvs_assembly_vcf = "%s/snvs_assembly.vcf" % self.variants
-
+        self.indels_assembly_bed = "%s/indel_assembly.bed" % self.variants
+        self.sv_assembly_bed = "%s/sv_assembly.bed" % self.variants
+        
         self.alleles_matches_in_ccs = "%s/alleles_matches_in_ccs.txt" % self.alleles
 
         self.assembly_fasta = "%s/contigs.fasta" % self.assembly
@@ -78,3 +82,4 @@ class FileManager():
         self.phased_blocks = "%s/phased_blocks.txt" % self.variants
         self.input_args = "%s/args.json" % self.log
         self.assembly_script = "%s/data/assembly.sh" % self.package_directory
+

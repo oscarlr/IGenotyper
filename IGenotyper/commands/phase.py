@@ -2,14 +2,14 @@
 from IGenotyper.cpu import CpuManager
 from IGenotyper.files import FileManager
 from IGenotyper.clt import CommandLine
-#from IGenotyper.vcffn import read_in_phased_vcf
-#from IGenotyper.bam import create_phased_bam_header
-from IGenotyper.helper import non_emptyfile,clean_up
-#from rephase import fix_phased_alignments
+
+from IGenotyper.helper import non_emptyfile,clean_up,remove_files
+
+from IGenotyper.phasing.snps import detect_snps_from_reads,phase_snps_from_reads
+from IGenotyper.phasing.reads import phase_alignments
 
 import os
 import json
-import pysam
 from shutil import copyfile
 
 def add_arguments(subparser):
@@ -23,10 +23,6 @@ def add_arguments(subparser):
     subparser.add_argument('--input_vcf', metavar='VCF', help='Phased VCF file to phase reads')
     subparser.add_argument('bam', metavar='BAM', help='PacBio bam file')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
-
-# def create_tag(hap):
-#     haptag = ("RG", str(hap), "Z")
-#     return haptag
 
 def save_parameters(files,sample,input_vcf):
     paramaters = {

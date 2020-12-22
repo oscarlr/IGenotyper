@@ -42,6 +42,10 @@ def read_is_unphased(read):
         return True
     return False
 
+def remove_files(files):
+    for f in files:
+        os.remove(f)
+
 def clean_up(files):
     if os.path.isdir(files.tmp):
         shutil.rmtree(files.tmp)
@@ -248,3 +252,12 @@ def get_ref_seq(files,chrom,start,end):
     fasta = pysam.FastaFile(files.ref)
     return fasta.fetch(reference=chrom,start=start,end=end)
 
+def get_mapping_pos(bam):
+    pos = {}
+    samfile = pysam.AlignmentFile(bam)
+    for read in samfile:
+        if skip_read(read):
+            continue
+        chrom = samfile.get_reference_name(read.reference_id)
+        pos[read.query_name] = [chrom,read.reference_start,read.reference_end]
+    return pos

@@ -3,8 +3,8 @@ from IGenotyper.cpu import CpuManager
 from IGenotyper.files import FileManager
 
 from IGenotyper.helper import non_emptyfile,clean_up,remove_files
-from IGenotyper.command_line.reads import ReadManip
-from IGenotyper.command_line.alignments import Align
+from IGenotyper.command_lines.reads import ReadManip
+from IGenotyper.command_lines.alignments import Align
 
 from IGenotyper.phasing.snps import generate_phased_snps
 from IGenotyper.phasing.reads import phase_subreads,phase_ccs
@@ -55,7 +55,7 @@ def run_phasing(
     reads_command_line = ReadManip(files,cpu,sample)
     align_command_line = Align(files,cpu,sample)
     
-    reads_command_line.generate_ccs_reads():
+    reads_command_line.generate_ccs_reads()
     
     if not non_emptyfile(files.phased_snvs_vcf):
         reads_command_line.turn_ccs_reads_to_fastq()

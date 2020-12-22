@@ -32,7 +32,7 @@ def pre_phase_processing(command_line_tools,sample,input_vcf):
         command_line_tools.map_subreads()
         if input_vcf is None:
             command_line_tools.genotype_snvs_from_ccs(sample)
-            command_line_tools.phase_genotype_snvs(sample)
+            command_line_tools.phase_genotype_ccs_snvs(sample)
         else:
             copyfile(input_vcf, command_line_tools.files.phased_snvs_vcf)
 

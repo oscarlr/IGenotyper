@@ -81,3 +81,10 @@ def phase_alignments(vcffn,bam,sample,phased_bam):
     unphased_bam.close()
     phased_bam.close()
     pysam.index(outbam)
+
+def phase_subreads(files,sample):
+    phase_alignments(files.phased_snvs_vcf,files.subreads_to_ref,sample,files.subreads_to_ref_phased)
+
+def phase_ccs(files,sample):
+    phase_alignments(files.phased_snvs_vcf,files.ccs_to_ref,sample,files.ccs_to_ref_phased)
+    

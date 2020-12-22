@@ -109,31 +109,14 @@ def fix_alignments(tmp,bam,iteration):
     new_sam_file.close()
     return new_sam_file
 
-def remove_prev_phasing_file(files):
+def fix_ccs_alignment(files,reads_command_line,iteration):
+    sam_file = fix_alignments(files.tmp,files.ccs_to_ref_phased,iteration)
     os.remove(files.ccs_to_ref)
-    os.remove("%s.bai" % files.ccs_to_ref)
     os.remove(files.ccs_to_ref_phased)
-    os.remove("%s.bai" % files.ccs_to_ref_phased)
+    reads_command_line.sam_to_sorted_bam(sam_file,files.files.ccs_to_ref)
+
+def fix_subread_alignment(files,reads_command_line,iteration):
+    sam_file = fix_alignments(files.tmp,files.subreads_to_ref_phased,iteration)
     os.remove(files.subreads_to_ref)
-    os.remove("%s.bai" % files.subreads_to_ref)
     os.remove(files.subreads_to_ref_phased)
-    os.remove("%s.bai" % files.subreads_to_ref_phased)
-    os.remove(files.snvs_vcf)
-    os.remove(files.phased_snvs_vcf)
-
-
-
-def fix_phased_alignments(bam,sample,command_line_tools,iteration,tmp):
-    bams = {"subreads":files.subreads_to_ref_phased,
-            "ccs": files.ccs_to_ref_phased}
-    #    for bam_type in bams:
-    fix_alignments(tmp,bam,iteration)
-    remove_prev_phasing_file(files)        
-    command_line_tools.sam_to_sorted_bam("%s/subreads_%s" % (files.tmp,iteration),
-                                         files.subreads_to_ref)
-    command_line_tools.sam_to_sorted_bam("%s/ccs_%s" % (files.tmp,iteration),
-                                         files.ccs_to_ref)
-    command_line_tools.genotype_snvs_from_ccs(sample)
-    command_line_tools.phase_genotype_ccs_snvs(sample)
-    #phase_sequencing_data(files,sample)
-            
+    reads_command_line.sam_to_sorted_bam(sam_file,files.files.subreads_to_ref)

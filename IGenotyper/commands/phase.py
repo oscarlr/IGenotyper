@@ -1,12 +1,13 @@
 #!/bin/env python
 from IGenotyper.cpu import CpuManager
 from IGenotyper.files import FileManager
-from IGenotyper.clt import CommandLine
 
 from IGenotyper.helper import non_emptyfile,clean_up,remove_files
+from IGenotyper.command_line.reads import ReadManip
+from IGenotyper.command_line.alignments import Align
 
-from IGenotyper.phasing.snps import detect_snps_from_reads,phase_snps_from_reads
-from IGenotyper.phasing.reads import phase_alignments
+from IGenotyper.phasing.snps import generate_phased_snps
+from IGenotyper.phasing.reads import phase_subreads,phase_ccs
 
 import os
 import json
@@ -51,38 +52,31 @@ def run_phasing(
         sys.exit(0)
         
     cpu = CpuManager(threads,mem,cluster,queue,walltime)
-    command_line_tools = CommandLine(files,cpu)
-
-    command_line_tools.generate_ccs_reads()
+    reads_command_line = ReadManip(files,cpu,sample)
+    align_command_line = Align(files,cpu,sample)
+    
+    reads_command_line.generate_ccs_reads():
     
     if not non_emptyfile(files.phased_snvs_vcf):
-        command_line_tools.turn_ccs_reads_to_fastq()
-        command_line_tools.map_ccs_reads()
-        command_line_tools.map_subreads()
+        reads_command_line.turn_ccs_reads_to_fastq()
+        align_command_line.map_ccs_reads()
+        align_command_line.map_subreads()
         
         if input_vcf is None:
-            detect_snps_from_reads(files.ccs_to_ref,files.ref,sample,files.snp_candidates,files.snvs_vcf)
-            phase_snps_from_reads(sample,files.ref,files.hased_snvs_vcf,files.snvs_vcf,files.ccs_to_ref)
+            generate_phased_snps(files,cpu,sample)
         else:
             copyfile(input_vcf,files.phased_snvs_vcf)
 
-    phase_alignments(files.phased_snvs_vcf,files.ccs_to_ref,sample,files.ccs_to_ref_phased)
-    phase_alignments(files.phased_snvs_vcf,files.subreads_to_ref,sample,files.subreads_to_ref_phased)
+    phase_ccs(files,sample)
+    phase_subreads(files,sample)
     
     iterations = 2
     for iteration in range(0,iterations):
-        vcfs = [files.snp_candidates,files.snvs_vcf,files.phased_snvs_vcf]
-        remove_files(vcfs)
-        for phased_bam,unphased_bam in zip([files.ccs_to_ref_phased,files.subreads_to_ref_phased],
-                                          [files.ccs_to_ref,files.subreads_to_ref]):
-            samfile = fix_alignments(files.tmp,phased_bam,iteration)
-            os.remove(unphased_bam)
-            os.remove("%s.bai" % unphased_bam)
-            command_line_tools.sam_to_sorted_bam(samfile,unphased_bam)
-        detect_snps_from_reads(files.ccs_to_ref,files.ref,sample,files.snp_candidates,files.snvs_vcf)
-        phase_snps_from_reads(sample,files.ref,files.phased_snvs_vcf,files.snvs_vcf,files.ccs_to_ref)
-        phase_alignments(files.phased_snvs_vcf,files.ccs_to_ref,sample,files.ccs_to_ref_phased)
-        phase_alignments(files.phased_snvs_vcf,files.subreads_to_ref,sample,files.subreads_to_ref_phased)
+        remove_vcfs(files)
+        fix_ccs_alignment(reads_command_line,files,iteration)
+        fix_subread_alignment(reads_command_line,files,iteration)
+        phase_ccs(files,sample)
+        phase_subreads(files,sample)
 
     save_parameters(files,sample,input_vcf)
     clean_up(files)

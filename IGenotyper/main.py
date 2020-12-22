@@ -2,7 +2,7 @@
 import sys
 import argparse
 import importlib
-from IGenotyper.check import check_tools
+from IGenotyper.common.check import check_tools
 
 def main():
     commands = [

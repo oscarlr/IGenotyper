@@ -109,14 +109,14 @@ def fix_alignments(tmp,bam,iteration):
     new_sam_file.close()
     return new_sam_file
 
-def fix_ccs_alignment(files,reads_command_line,iteration):
+def fix_ccs_alignment(files,align_command_line,iteration):
     sam_file = fix_alignments(files.tmp,files.ccs_to_ref_phased,iteration)
     os.remove(files.ccs_to_ref)
     os.remove(files.ccs_to_ref_phased)
-    reads_command_line.sam_to_sorted_bam(sam_file,files.files.ccs_to_ref)
+    align_command_line.sam_to_sorted_bam("%s/%s.sam" % (tmp,iteration),files.ccs_to_ref)
 
-def fix_subread_alignment(files,reads_command_line,iteration):
+def fix_subread_alignment(files,align_command_line,iteration):
     sam_file = fix_alignments(files.tmp,files.subreads_to_ref_phased,iteration)
     os.remove(files.subreads_to_ref)
     os.remove(files.subreads_to_ref_phased)
-    reads_command_line.sam_to_sorted_bam(sam_file,files.files.subreads_to_ref)
+    align_command_line.sam_to_sorted_bam("%s/%s.sam" % (tmp,iteration),files.subreads_to_ref)

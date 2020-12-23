@@ -1,6 +1,6 @@
 #!/bin/env python
 
-from IGenotyper.command_line.alignments import Snps
+from IGenotyper.command_lines.snps import Snps
 
 def generate_phased_snps(files,cpu,sample):
     snps_command_line = Snps(files,cpu,sample)

@@ -3,6 +3,7 @@ from IGenotyper.cpu import CpuManager
 from IGenotyper.files import FileManager
 from IGenotyper.clt import CommandLine
 from IGenotyper.helper import show_value,create_directory,write_to_bashfile,non_emptyfile,get_phased_blocks
+from IGenotyper.commands.refinement.assembly import refine_assembly
 
 import os
 import json
@@ -127,14 +128,16 @@ def run_assembly(
     cpu = CpuManager(threads, mem, cluster, queue, walltime)
     command_line_tools = CommandLine(files,cpu)
 
-    if not non_emptyfile(files.assembly_fastq):
-        command_line_tools.phase_blocks(sample)
-        phased_blocks = get_phased_blocks(files)
-        assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
-        command_line_tools.run_assembly_scripts(assembly_scripts)
-        combine_assembly_sequences(files,phased_blocks)
+    # if not non_emptyfile(files.assembly_fastq):
+    #     command_line_tools.phase_ccs_blocks(sample)
+    #     phased_blocks = get_phased_blocks(files)
+    #     assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
+    #     command_line_tools.run_assembly_scripts(assembly_scripts)
+    #     combine_assembly_sequences(files,phased_blocks)
 
-    command_line_tools.map_assembly()
+    # command_line_tools.map_assembly()
 
+    refine_assembly(files,command_line_tools,sample)
+    
 def main(args):
     run_assembly(**vars(args))

@@ -22,7 +22,7 @@ def remove_files(file_lists):
         os.remove(f)
 
 def remove_vcfs(files):
-    vcfs = [files.snp_candidates,files.snvs_vcf,files.phased_snvs_vcf]
+    vcfs = [files.snp_candidates,files.snps_vcf,files.phased_snps_vcf]
     remove_files(vcfs)
 
 def show_value(s):

@@ -63,9 +63,9 @@ def phase_read(read,snps,chrom):
     read.set_tags(tags_to_add)
     return read
 
-def phase_alignments(vcffn,bam,sample,phased_bam):
+def phase_alignments(vcffn,bam,sample,outbam):
     vcf = read_in_phased_vcf(vcffn,sample)
-    phased_bam_index = "%s.bai" % phased_bam
+    phased_bam_index = "%s.bai" % outbam
     if non_emptyfile(phased_bam_index):
         return None
     phase_snps = vcf.phased_variants()
@@ -83,8 +83,8 @@ def phase_alignments(vcffn,bam,sample,phased_bam):
     pysam.index(outbam)
 
 def phase_subreads(files,sample):
-    phase_alignments(files.phased_snvs_vcf,files.subreads_to_ref,sample,files.subreads_to_ref_phased)
+    phase_alignments(files.phased_snps_vcf,files.subreads_to_ref,sample,files.subreads_to_ref_phased)
 
 def phase_ccs(files,sample):
-    phase_alignments(files.phased_snvs_vcf,files.ccs_to_ref,sample,files.ccs_to_ref_phased)
+    phase_alignments(files.phased_snps_vcf,files.ccs_to_ref,sample,files.ccs_to_ref_phased)
     

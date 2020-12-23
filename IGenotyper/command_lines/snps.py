@@ -31,7 +31,7 @@ class Snps(CommandLine):
     def snp_genotypes(self,bam,snp_candidates,snps_vcf):
         args = [self.sample,
                 self.files.ref,
-                snvs_vcf,
+                snps_vcf,
                 snp_candidates,
                 bam]
         command = ("CONDA_BASE=$(conda info --base) \n"
@@ -45,17 +45,17 @@ class Snps(CommandLine):
                    "%s "
                    "%s #> /dev/null 2>&1 " 
                    "conda deactivate " % tuple(args))
-        self.run_command(command,snvs_vcf)
+        self.run_command(command,snps_vcf)
 
     def snp_genotypes_from_ccs(self):
-        self.snp_genotypes(self,self.files.ccs_to_ref,self.files.snp_candidates,self.files.snps_vcf)
+        self.snp_genotypes(self.files.ccs_to_ref,self.files.snp_candidates,self.files.snps_vcf)
         
-    def phase_snvs(self,phased_snvs_vcf,snvs_vcf,bams):
+    def phase_snps(self,phased_snps_vcf,snps_vcf,bams):
         bams = " ".join(bams)
         args = [self.sample,
                 self.files.ref,
-                phased_snvs_vcf,
-                snvs_vcf,
+                phased_snps_vcf,
+                snps_vcf,
                 bams]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
@@ -69,15 +69,15 @@ class Snps(CommandLine):
                    "%s "
                    "%s #> /dev/null 2>&1\n"
                    "conda deactivate" % tuple(args))
-        self.run_command(command,phased_snvs_vcf)
+        self.run_command(command,phased_snps_vcf)
 
     def phase_ccs_snvs(self):
-        phase_snvs(self,self.files.phased_snvs_vcf,self.files.snvs_vcf,[self.files.ccs_to_ref])
+        self.phase_snps(self.files.phased_snps_vcf,self.files.snps_vcf,[self.files.ccs_to_ref])
         
-    def phased_blocks(self,phased_blocks,phased_snvs_vcf):
+    def phased_blocks(self,phased_blocks,phased_snps_vcf):
         args = [self.sample,
                 phased_blocks,
-                phased_snvs_vcf]
+                phased_snps_vcf]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
                    "conda activate whatshap-latest \n"
@@ -89,4 +89,4 @@ class Snps(CommandLine):
         self.run_command(command,phased_blocks)
 
     def phased_blocks_from_ccs_snps(self):
-        self.phased_blocks(self.files.phased_blocks,self.files.phased_snvs_vcf)    
+        self.phased_blocks(self.files.phased_blocks,self.files.phased_snps_vcf)    

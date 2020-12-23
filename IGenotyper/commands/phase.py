@@ -1,13 +1,14 @@
 #!/bin/env python
-from IGenotyper.cpu import CpuManager
 from IGenotyper.files import FileManager
+from IGenotyper.common.cpu import CpuManager
 
-from IGenotyper.helper import non_emptyfile,clean_up,remove_files
+from IGenotyper.common.helper import non_emptyfile,clean_up,remove_vcfs
 from IGenotyper.command_lines.reads import ReadManip
 from IGenotyper.command_lines.alignments import Align
 
 from IGenotyper.phasing.snps import generate_phased_snps
 from IGenotyper.phasing.reads import phase_subreads,phase_ccs
+from IGenotyper.phasing.mapping_adj import fix_ccs_alignment,fix_subread_alignment
 
 import os
 import json
@@ -57,7 +58,7 @@ def run_phasing(
     
     reads_command_line.generate_ccs_reads()
     
-    if not non_emptyfile(files.phased_snvs_vcf):
+    if not non_emptyfile(files.phased_snps_vcf):
         reads_command_line.turn_ccs_reads_to_fastq()
         align_command_line.map_ccs_reads()
         align_command_line.map_subreads()
@@ -65,18 +66,20 @@ def run_phasing(
         if input_vcf is None:
             generate_phased_snps(files,cpu,sample)
         else:
-            copyfile(input_vcf,files.phased_snvs_vcf)
+            copyfile(input_vcf,files.phased_snps_vcf)
 
     phase_ccs(files,sample)
     phase_subreads(files,sample)
-    
-    iterations = 2
-    for iteration in range(0,iterations):
-        remove_vcfs(files)
-        fix_ccs_alignment(reads_command_line,files,iteration)
-        fix_subread_alignment(reads_command_line,files,iteration)
-        phase_ccs(files,sample)
-        phase_subreads(files,sample)
+
+    if input_vcf is None:
+        iterations = 2
+        for iteration in range(0,iterations):
+            remove_vcfs(files)
+            fix_ccs_alignment(files,align_command_line,iteration)
+            fix_subread_alignment(files,align_command_line,iteration)
+            generate_phased_snps(files,cpu,sample)
+            phase_ccs(files,sample)
+            phase_subreads(files,sample)
 
     save_parameters(files,sample,input_vcf)
     clean_up(files)

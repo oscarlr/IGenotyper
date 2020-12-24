@@ -112,11 +112,15 @@ def fix_alignments(tmp,bam,iteration):
 def fix_ccs_alignment(files,align_command_line,iteration):
     sam_file = fix_alignments(files.tmp,files.ccs_to_ref_phased,iteration)
     os.remove(files.ccs_to_ref)
+    os.remove("%s.bai" % files.ccs_to_ref)
     os.remove(files.ccs_to_ref_phased)
+    os.remove("%s.bai" % files.ccs_to_ref_phased)
     align_command_line.sam_to_sorted_bam("%s/%s.sam" % (files.tmp,iteration),files.ccs_to_ref)
 
 def fix_subread_alignment(files,align_command_line,iteration):
     sam_file = fix_alignments(files.tmp,files.subreads_to_ref_phased,iteration)
     os.remove(files.subreads_to_ref)
+    os.remove("%s.bai" % files.subreads_to_ref)
     os.remove(files.subreads_to_ref_phased)
+    os.remove("%s.bai" % files.subreads_to_ref_phased)
     align_command_line.sam_to_sorted_bam("%s/%s.sam" % (files.tmp,iteration),files.subreads_to_ref)

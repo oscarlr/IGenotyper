@@ -189,9 +189,9 @@ def map_ccs_reads(self):
 #         command = "kalign -i %s -f clu -o %s" % (fastafn,clufn)
 #         self.run_command(command,clufn)
 
-#     def blast_seq(self,fastafn,blast_out):
-#         args = [fastafn,fastafn,blast_out]
-#         command = ("blastn -query %s -subject %s "
-#                    "-outfmt \"6 length pident nident mismatch gapopen gaps qseqid qstart qend qlen sseqid sstart send slen sstrand\" "
-#                    "> %s " % tuple(args))
-#         self.run_command(command,blast_out)
+    def blast_seq(self,fastafn,blast_out):
+        args = [fastafn,fastafn,blast_out]
+        command = ("blastn -query %s -subject %s "
+                   "-outfmt \"6 length pident nident mismatch gapopen gaps qseqid qstart qend qlen sseqid sstart send slen sstrand\" "
+                   "> %s " % tuple(args))
+        self.run_command(command,blast_out)

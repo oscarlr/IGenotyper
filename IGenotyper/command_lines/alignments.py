@@ -71,3 +71,18 @@ class Align(CommandLine):
                 self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
             self.select_target_reads(sorted_bam_tmp,self.files.ccs_to_ref)
 
+    def blast_seq(self,fastafn,blast_out):
+        args = [fastafn,fastafn,blast_out]
+        command = ("blastn -query %s -subject %s "
+                   "-outfmt \"6 length pident nident mismatch gapopen gaps qseqid qstart qend qlen sseqid sstart send slen sstrand\" "
+                   "> %s " % tuple(args))
+        self.run_command(command,blast_out)
+
+    def map_merged_assembly(self):
+        print "Mapping merged assembly..."
+        prefix = "%s/merged_assembly_to_ref" % self.files.tmp
+        opt="--insertion 0 --deletion 0 --minMatch 35 --maxMatch 50 --scoreMatrix \"-100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100\""
+        self.map_reads_with_blasr(self.files.merged_assembly,prefix,self.files.ref,opt)
+        self.sam_to_sorted_bam(prefix,self.files.merged_assembly_to_ref)
+
+        

@@ -26,6 +26,7 @@ class FileManager():
         self.variants = "%s/variants" % self.outdir
         self.alignments = "%s/alignments" % self.outdir
         self.assembly = "%s/assembly" % self.outdir
+        self.assembly_merge = "%s/assembly/merge" % self.outdir
         self.alleles = "%s/alleles" % self.outdir
         self.msa = "%s/variants/msa" % self.outdir
         self.log = "%s/logs" % self.outdir
@@ -41,7 +42,8 @@ class FileManager():
             self.assembly,
             self.tmp,
             self.log,
-            self.msa
+            self.msa,
+            self.assembly_merge
         ]
 
         create_folders(folders)
@@ -83,3 +85,9 @@ class FileManager():
         self.input_args = "%s/args.json" % self.log
         self.assembly_script = "%s/data/assembly.sh" % self.package_directory
 
+        self.merged_assembly = "%s/merged_assembly.fasta" % self.assembly_merge
+        self.contigs_blasted = "%s/blast.txt" % self.assembly_merge
+        self.merged_assembly_to_ref = "%s/merged_assembly_to_ref.sorted.bam" % self.alignments
+        self.merged_assembly_to_ref_phased = "%s/merged_assembly_to_ref_phased.sorted.bam" % self.alignments
+        self.merged_phased_snps_vcf = "%s/snvs_phased_from_merged_seq.vcf" % self.variants
+        

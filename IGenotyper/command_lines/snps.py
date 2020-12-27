@@ -90,3 +90,8 @@ class Snps(CommandLine):
 
     def phased_blocks_from_ccs_snps(self):
         self.phased_blocks(self.files.phased_blocks,self.files.phased_snps_vcf)    
+
+    def phase_snvs_with_merged_seq(self):
+        bams = [self.files.ccs_to_ref,self.files.merged_assembly_to_ref]
+        self.phase_snps(self.files.merged_phased_snps_vcf,
+                        self.files.phased_snps_vcf,bams)

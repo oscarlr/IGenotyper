@@ -88,3 +88,6 @@ def phase_subreads(files,sample):
 def phase_ccs(files,sample):
     phase_alignments(files.phased_snps_vcf,files.ccs_to_ref,sample,files.ccs_to_ref_phased)
     
+def phase_merged_seqs(files,sample):
+    phase_alignments(files.merged_phased_snps_vcf,files.merged_assembly_to_ref,sample,files.merged_assembly_to_ref_phased)
+    

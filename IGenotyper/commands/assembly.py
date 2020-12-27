@@ -1,14 +1,22 @@
 #!/bin/env python
-from IGenotyper.cpu import CpuManager
-from IGenotyper.files import FileManager
-from IGenotyper.clt import CommandLine
-from IGenotyper.helper import show_value,create_directory,write_to_bashfile,non_emptyfile,get_phased_blocks
-from IGenotyper.commands.refinement.assembly import refine_assembly
-
 import os
 import json
 import pybedtools
 from Bio import SeqIO
+
+from IGenotyper.files import FileManager
+
+from IGenotyper.common.cpu import CpuManager
+from IGenotyper.common.helper import non_emptyfile,get_phased_blocks
+
+from IGenotyper.command_lines.assembly import Assembly
+from IGenotyper.command_lines.alignments import Align
+from IGenotyper.command_lines.snps import Snps
+
+from IGenotyper.phasing.reads import phase_merged_seqs
+
+from IGenotyper.assembly.scripts import get_assembly_scripts
+from IGenotyper.assembly.merge_assembly import merge_assembly
 
 def add_arguments(subparser):
     subparser.add_argument('--threads', metavar='THREADS', default=1, help='Number of threads')
@@ -17,81 +25,6 @@ def add_arguments(subparser):
     subparser.add_argument('--queue', metavar='QUEUE', default="premium", help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME', default=2, help='Walltime for cluster')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
-
-# def get_phased_regions(files,min_length=500,min_variants=2):
-#     blocks = []
-#     Block = namedtuple('Block', ['sample','chrom','start_1','start','end','num_variants'])
-#     with open(files.phased_blocks, 'r') as fh:
-#         header = fh.readline()
-#         for line in fh:
-#             line = line.rstrip().split('\t')
-#             block = Block._make(line)
-#             if int(block.num_variants) < min_variants:
-#                 continue
-#             if (int(block.end) - int(block.start)) < min_length:
-#                 continue
-#             blocks.append([block.chrom, int(block.start), int(block.end)])
-#     return sorted(blocks, key=lambda x: x[1])
-
-# def add_haplotype_to_blocks(phased_blocks,regions,haplotype):
-#     for region in regions:
-#         block = [
-#             show_value(region.chrom),
-#             show_value(region.start),
-#             show_value(region.end),
-#             haplotype
-#             ]
-#         phased_blocks.append(block)
-#     return phased_blocks
-
-# def get_phased_blocks(files):
-#     phased_blocks = []
-#     target_regions = pybedtools.BedTool(files.target_regions)
-#     phased_regions = pybedtools.BedTool(get_phased_regions(files))
-#     unphased_regions = target_regions.subtract(phased_regions)
-#     for haplotype in ["1","2"]:
-#         phased_blocks = add_haplotype_to_blocks(phased_blocks,phased_regions,haplotype)
-#     phased_blocks = add_haplotype_to_blocks(phased_blocks,unphased_regions,"0")
-#     return phased_blocks
-
-def region_assembled(directory):
-    assembled = False
-    if os.path.isfile("%s/done" % directory):
-        assembled = True
-    return assembled
-
-def create_assemble_script(files,cpu,dir,chrom,start,end,hap):
-    flank = 1000
-    samtools_hap = "-r %s" % hap
-    bashfile = "%s/assemble.sh" % dir
-    params = {
-        "hap": samtools_hap,
-        "ccs_to_ref": files.ccs_to_ref_phased,
-        "chrom": chrom,
-        "start": max(0, int(start) - flank),
-        "end": int(end) + flank,
-        "output": dir,
-        "threads": cpu.threads,
-        "size": (int(end) - int(start)) + (flank * 2),
-        "subreads": files.input_bam,
-        "subreads_to_ref": files.subreads_to_ref_phased,
-        "python_scripts": files.scripts,
-        "ref": files.ref
-    }
-    write_to_bashfile(files.assembly_script,bashfile,params)
-    return bashfile
-
-def get_assembly_scripts(files,cpu,phased_blocks):
-    assembly_scripts = []
-    for chrom,start,end,hap in phased_blocks:
-        dir = "%s/assembly/%s/%s_%s/%s" % (files.tmp,chrom,start,end,hap)
-        if region_assembled(dir):
-            continue
-        create_directory(dir)
-        assembly_script = create_assemble_script(files,cpu,dir,chrom,start,end,hap)
-        assembly_scripts.append(assembly_script)
-    return assembly_scripts
-
 
 def combine_sequence(files,phased_blocks,outfile,type_):
     seqs = []
@@ -126,18 +59,23 @@ def run_assembly(
     sample = phasing_args["sample"]
 
     cpu = CpuManager(threads, mem, cluster, queue, walltime)
-    command_line_tools = CommandLine(files,cpu)
-
-    # if not non_emptyfile(files.assembly_fastq):
-    #     command_line_tools.phase_ccs_blocks(sample)
-    #     phased_blocks = get_phased_blocks(files)
-    #     assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
-    #     command_line_tools.run_assembly_scripts(assembly_scripts)
-    #     combine_assembly_sequences(files,phased_blocks)
-
-    # command_line_tools.map_assembly()
-
-    refine_assembly(files,command_line_tools,sample)
+    snps = Snps(files,cpu,sample)
+    assembly_command_line = Assembly(files,cpu,sample)
+    align_command_line = Align(files,cpu,sample)
+    snps_command_line = Snps(files,cpu,sample)
     
+    if not non_emptyfile(files.assembly_fastq):
+        snps.phased_blocks_from_ccs_snps()
+        phased_blocks = get_phased_blocks(files)
+        assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
+        assembly_command_line.run_assembly_scripts(assembly_scripts)
+        combine_assembly_sequences(files,phased_blocks)
+
+    align_command_line.map_assembly()
+
+    merge_assembly(files,align_command_line,sample)
+    snps.phase_snvs_with_merged_seq()
+    phase_merged_seqs(files,sample)
+
 def main(args):
     run_assembly(**vars(args))

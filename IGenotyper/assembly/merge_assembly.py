@@ -157,12 +157,13 @@ def get_contig_coords(alignments,path):
             coords.append(merge_coords)
     return coords
 
-def path_sequence(files,alignments,contigs):
+def path_sequence(files,alignments,contigs,merged_contigs_fh):
     seqfn = "%s/seq.fasta" % files.tmp
     coords = get_contig_coords(alignments,contigs)
     inseq = SeqIO.to_dict(SeqIO.parse(seqfn,"fasta"))
     seqs = []
     for contig_name,start,end in coords:
+        merged_contigs_fh.write("\t%s\t%s\t%s\n" % (contig_name,start,end))
         if start == 1 and end == -1:
             seq = str(inseq[contig_name].seq[0:])
         else:
@@ -225,6 +226,7 @@ def merge_contigs(files,alignments,contig_pos):
     seqs = {}
     contigs_used = []
     undirected_graph = create_graph(alignments,"undirected")
+    merged_contigs_fh = open(files.merged_contigs,'w')
     for i,group in enumerate(connected_components(undirected_graph)):
         edges =  undirected_graph.subgraph(group).edges()
         alignment_edges = subset_alignments(alignments,edges)
@@ -245,9 +247,11 @@ def merge_contigs(files,alignments,contig_pos):
         contigs = networkx.shortest_path(directed_graph,source=start_contig,target=end_contig)
         paths = valid_paths(contigs)
         for j,path in enumerate(paths):
-            contig_seq = path_sequence(files,alignments,path)
+            merged_contigs_fh.write("%s.%s\n" % (i,j))
+            contig_seq = path_sequence(files,alignments,path,merged_contigs_fh)
             seqs["%s.%s" % (i,j)] = contig_seq
         contigs_used += contigs
+    merged_contigs_fh.close()
     return (seqs,contigs_used)
 
 def write_merge_seqs(files,seqs,contigs_used,contigs_to_ignore):

@@ -87,6 +87,7 @@ class FileManager():
 
         self.merged_assembly = "%s/merged_assembly.fasta" % self.assembly_merge
         self.contigs_blasted = "%s/blast.txt" % self.assembly_merge
+        self.merged_contigs = "%s/merged_contigs.txt" % self.assembly_merge
         self.merged_assembly_to_ref = "%s/merged_assembly_to_ref.sorted.bam" % self.alignments
         self.merged_assembly_to_ref_phased = "%s/merged_assembly_to_ref_phased.sorted.bam" % self.alignments
         self.merged_phased_snps_vcf = "%s/snvs_phased_from_merged_seq.vcf" % self.variants

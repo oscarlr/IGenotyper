@@ -162,6 +162,7 @@ def path_sequence(files,alignments,contigs,merged_contigs_fh):
     coords = get_contig_coords(alignments,contigs)
     inseq = SeqIO.to_dict(SeqIO.parse(seqfn,"fasta"))
     seqs = []
+    seqs_contigs = []
     for contig_name,start,end in coords:
         merged_contigs_fh.write("\t%s\t%s\t%s\n" % (contig_name,start,end))
         if start == 1 and end == -1:
@@ -169,55 +170,52 @@ def path_sequence(files,alignments,contigs,merged_contigs_fh):
         else:
             seq = str(inseq[contig_name].seq[int(start):int(end)])
         seqs.append(seq)
-    return "".join(seqs)
+        seqs_contigs.append(contig_name)
+    return ("".join(seqs),seqs_contigs)
 
 def valid_paths(contigs):
     # 0 --> 1 --> 2 --> 0 X --> 2
     # 1 ---> 0 X --> 1
     paths = []
-    path = []
+    path = []        
     first_hap = None
-    visited_unphased = False
-    current_hap = None
-    current_coord = None
+
+    visited_hap0 = False
+    visited_hap1 = False
+    visited_hap2 = False
+
+    create_new_path = False
+
     for contig in contigs:
         hap = get_haplotype(contig)
-        coord = assembly_location(contig)
-        if hap == "0":
-            if first_hap != None:
-                visited_unphased = True
+
+        if hap == "0" and first_hap != None:
+            visited_hap0 = True
+        if hap == "1":
+            visited_hap1 = True
+        if hap == "2":
+            visited_hap2 = True
+
         if first_hap == None:
             first_hap = hap
-            current_hap = hap
-            current_coord = assembly_location(contig)
         else:
-            hap_switch = False
-            if current_hap == "1" and hap == "2":
-                hap_switch = True
-            if current_hap == "2" and hap == "1":
-                hap_switch = True
-            if hap_switch:
-                if coord == current_coord:
-                    paths.append(path)
-                    path = []
-                    visited_unphased = False
-                    first_hap = None
-                    current_hap = None
-                    current_coord = None
-                    path.append(contig)
-                    continue
-        if visited_unphased:
-            if hap in ["1","2"]:
+            if visited_hap1 and visited_hap2:
                 paths.append(path)
-                path = []
-                visited_unphased = False
-                first_hap = None
-                current_hap = None
-                current_coord = None
-                path.append(contig)
-                continue
-        current_hap = hap
-        current_coord = coord
+                create_new_path = True
+
+        if create_new_path == False:
+            if visited_hap0:
+                if hap in ["1","2"]:
+                    paths.append(path)
+                    create_new_path = True
+
+        if create_new_path:
+            path = []
+            first_hap = None
+            visited_hap0 = False
+            visited_hap1 = False
+            visited_hap2 = False                                
+
         path.append(contig)
     paths.append(path)
     return paths                
@@ -248,9 +246,9 @@ def merge_contigs(files,alignments,contig_pos):
         paths = valid_paths(contigs)
         for j,path in enumerate(paths):
             merged_contigs_fh.write("%s.%s\n" % (i,j))
-            contig_seq = path_sequence(files,alignments,path,merged_contigs_fh)
+            contig_seq,contig_names = path_sequence(files,alignments,path,merged_contigs_fh)
             seqs["%s.%s" % (i,j)] = contig_seq
-        contigs_used += contigs
+            contigs_used += contig_names
     merged_contigs_fh.close()
     return (seqs,contigs_used)
 
@@ -262,9 +260,8 @@ def write_merge_seqs(files,seqs,contigs_used,contigs_to_ignore):
         if seq in contigs_to_ignore:
             continue
         hap = get_haplotype(seq)
-        if hap != "0":
-            if seq in contigs_used:
-                continue
+        if seq in contigs_used:
+            continue
         seqs[index] = str(inseq[seq].seq)
         index += 1
     records = []

@@ -69,7 +69,7 @@ def wrong_placement(alignment):
                 filter_ = True
     return filter_
     
-def filter_blast(blastout,mismatch_max=3,length_min=1000):
+def filter_blast(blastout,mismatch_max=1,length_min=1000):
     pairs = []
     contigs_to_ignore = []
     alignments = {}
@@ -260,8 +260,9 @@ def write_merge_seqs(files,seqs,contigs_used,contigs_to_ignore):
         if seq in contigs_to_ignore:
             continue
         hap = get_haplotype(seq)
-        if seq in contigs_used:
-            continue
+        if hap != "0":
+            if seq in contigs_used:
+                continue
         seqs[index] = str(inseq[seq].seq)
         index += 1
     records = []

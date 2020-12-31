@@ -91,4 +91,4 @@ class FileManager():
         self.merged_assembly_to_ref = "%s/merged_assembly_to_ref.sorted.bam" % self.alignments
         self.merged_assembly_to_ref_phased = "%s/merged_assembly_to_ref_phased.sorted.bam" % self.alignments
         self.merged_phased_snps_vcf = "%s/snvs_phased_from_merged_seq.vcf" % self.variants
-        
+        self.phased_blocks_merged_seq = "%s/phased_blocks_merged_seq.txt" % self.variants

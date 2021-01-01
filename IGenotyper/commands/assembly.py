@@ -75,7 +75,9 @@ def run_assembly(
 
     merge_assembly(files,align_command_line,sample)
     snps.phase_snvs_with_merged_seq()
+    snps.phased_blocks_from_merged_seq()
     phase_merged_seqs(files,sample)
 
+    
 def main(args):
     run_assembly(**vars(args))

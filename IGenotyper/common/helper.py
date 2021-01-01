@@ -82,7 +82,9 @@ def load_bed_regions(bedfile,add_fourth=False):
             start = int(line[1])
             end = int(line[2])
             if add_fourth:
-                annotation = line[3]
+                annotation = True
+                if len(line) == 4:
+                    annotation = line[3]
                 bed_regions.append([chrom,start,end,annotation])
             else:
                 bed_regions.append([chrom,start,end])
@@ -216,10 +218,10 @@ def coords_not_overlapping(read,mapped_chrom):
         not_overlapping = False
     return not_overlapping
 
-def get_phased_regions(files,min_length=500,min_variants=2):
+def get_phased_regions(phased_blocks,min_length=500,min_variants=2):
     blocks = []
     Block = namedtuple('Block', ['sample','chrom','start_1','start','end','num_variants'])
-    with open(files.phased_blocks, 'r') as fh:
+    with open(phased_blocks, 'r') as fh:
         header = fh.readline()
         for line in fh:
             line = line.rstrip().split('\t')
@@ -242,16 +244,19 @@ def add_haplotype_to_blocks(phased_blocks,regions,haplotype):
         phased_blocks.append(block)
     return phased_blocks
 
-def get_phased_blocks(files):
+def get_phased_blocks(files,phased_blocks_source):
     phased_blocks = []
     target_regions = pybedtools.BedTool(files.target_regions)
-    phased_regions = pybedtools.BedTool(get_phased_regions(files))
+    phased_regions = pybedtools.BedTool(get_phased_regions(phased_blocks_source))
     unphased_regions = target_regions.subtract(phased_regions)
     for haplotype in ["1","2"]:
         phased_blocks = add_haplotype_to_blocks(phased_blocks,phased_regions,haplotype)
     phased_blocks = add_haplotype_to_blocks(phased_blocks,unphased_regions,"0")
     return phased_blocks
 
+def phased_blocks_merged_seq(files):
+    return get_phased_blocks(files,files.phased_blocks_merged_seq)
+    
 def get_ref_seq(files,chrom,start,end):
     fasta = pysam.FastaFile(files.ref)
     return fasta.fetch(reference=chrom,start=start,end=end)

@@ -242,13 +242,14 @@ def merge_contigs(files,alignments,contig_pos):
                 if end > pos2:
                     pos2 = end
                     end_contig = e
-        contigs = networkx.shortest_path(directed_graph,source=start_contig,target=end_contig)
-        paths = valid_paths(contigs)
-        for j,path in enumerate(paths):
-            merged_contigs_fh.write("%s.%s\n" % (i,j))
-            contig_seq,contig_names = path_sequence(files,alignments,path,merged_contigs_fh)
-            seqs["%s.%s" % (i,j)] = contig_seq
-            contigs_used += contig_names
+        if networkx.has_path(directed_graph,start_contig,end_contig):
+            contigs = networkx.shortest_path(directed_graph,source=start_contig,target=end_contig)
+            paths = valid_paths(contigs)
+            for j,path in enumerate(paths):
+                merged_contigs_fh.write("%s.%s\n" % (i,j))
+                contig_seq,contig_names = path_sequence(files,alignments,path,merged_contigs_fh)
+                seqs["%s.%s" % (i,j)] = contig_seq
+                contigs_used += contig_names
     merged_contigs_fh.close()
     return (seqs,contigs_used)
 
@@ -285,7 +286,7 @@ def merge_assembly(files,align_command_line,sample):
     blast_assembly(files,align_command_line)
     merge_sequences(files)
     align_command_line.map_merged_assembly()    
-    
+
 # def refine_assembly(files,command_tools,sample_name):
 #     seqfn = assembly_seq(files)
 #     create_directory("%s/refinement" % files.assembly)

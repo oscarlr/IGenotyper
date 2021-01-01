@@ -95,3 +95,7 @@ class Snps(CommandLine):
         bams = [self.files.ccs_to_ref,self.files.merged_assembly_to_ref]
         self.phase_snps(self.files.merged_phased_snps_vcf,
                         self.files.phased_snps_vcf,bams)
+
+    def phased_blocks_from_merged_seq(self):
+        self.phased_blocks(self.files.phased_blocks_merged_seq,self.files.merged_phased_snps_vcf)
+        

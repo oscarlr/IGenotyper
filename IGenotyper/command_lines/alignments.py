@@ -81,7 +81,8 @@ class Align(CommandLine):
     def map_merged_assembly(self):
         print "Mapping merged assembly..."
         prefix = "%s/merged_assembly_to_ref" % self.files.tmp
-        opt="--insertion 0 --deletion 0 --minMatch 35 --maxMatch 50 --scoreMatrix \"-100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100\""
+        #opt="--insertion 0 --deletion 0 --minMatch 35 --maxMatch 50 --scoreMatrix \"-100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100\""
+        opt="--minMatch 35 --maxMatch 50"
         self.map_reads_with_blasr(self.files.merged_assembly,prefix,self.files.ref,opt)
         self.sam_to_sorted_bam(prefix,self.files.merged_assembly_to_ref)
 

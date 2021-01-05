@@ -72,11 +72,17 @@ def quality(reads):
         count += 1
     return int(round(qual/count,0))
 
-def unphased_genotype(alternate_allele):
-    alternate_alleles = alternate_allele.split(",")
-    if len(alternate_alleles) == 1:
-        return "1/1"
-    return "./."
+def unphased_genotype(reads,ref_base):
+    genotype = None
+    bases = set()
+    for read_name,read_base,read_qual,read_hap in reads:
+        if read_base == ref_base:
+	    genotype = "0/0"
+        elif read_base != ref_base:
+            genotype = "1/1"
+        bases.add(read_base)
+    assert len(bases) == 1
+    return genotype
 
 def phased_hap_bases(reads):
     hap1_base = None
@@ -106,9 +112,12 @@ def missing_hap_genotype(hap1_base,hap2_base,ref_base):
 
 def hap_genotype(hap1_base,hap2_base,ref_base):
     genotype = None
-    assert not ((ref_base == hap1_base) and (ref_base == hap2_base))
+    #assert not ((ref_base == hap1_base) and (ref_base == hap2_base))
     if ref_base == hap1_base:
-        genotype = "0/1"
+        if ref_base == hap2_base:
+            genotype = "0/0"
+        else:
+            genotype = "0/1"
     elif ref_base == hap2_base:
         genotype = "0/1"
     elif hap1_base == hap2_base:
@@ -118,18 +127,14 @@ def hap_genotype(hap1_base,hap2_base,ref_base):
     return genotype
         
 def genotype(reads,in_phased_region,ref_base):
-    aa = alternate_allele(reads,ref_base,in_phased_region)
-    if aa == ".":
-        return "0/0"
-
     if in_phased_region == False:
-        return unphased_genotype(aa)
-
-    hap1_base,hap2_base = phased_hap_bases(reads)
-    if None in [hap1_base,hap2_base]:        
-        gt = missing_hap_genotype(hap1_base,hap2_base,ref_base)
+        gt = unphased_genotype(reads,ref_base)
     else:
-        gt = hap_genotype(hap1_base,hap2_base,ref_base)
+        hap1_base,hap2_base = phased_hap_bases(reads)
+        if None in [hap1_base,hap2_base]:        
+            gt = missing_hap_genotype(hap1_base,hap2_base,ref_base)
+        else:
+            gt = hap_genotype(hap1_base,hap2_base,ref_base)
     assert gt != None
     return gt
 
@@ -184,7 +189,7 @@ def snp_info(bases,chrom,pos,**kwargs):
              read_genotype))
     return info
     
-def vcf_snp(bases,chrom,pos,**kwargs):
+def vcf_snp(bases,chrom,pos,**kwargs):    
     in_phased_region = snp_feat_overlap(kwargs["phased_regions"],chrom,pos)
     ref_base = kwargs["ref"].fetch(chrom,pos,pos + 1).upper()
     snp = [
@@ -205,7 +210,9 @@ def not_valid_pos(bases,chrom,pos,**kwargs):
     not_valid = False
     in_phased_region = snp_feat_overlap(kwargs["phased_regions"],chrom,pos)
     hap_bases = {}
+    b = set()
     for name,base,qual,hap in bases:
+        b.add(base)
         if in_phased_region and hap == "0":
             continue
         if (not in_phased_region) and (hap in ["1","2"]):
@@ -216,6 +223,9 @@ def not_valid_pos(bases,chrom,pos,**kwargs):
     for hap in hap_bases:
         if len(hap_bases[hap]) > 1:
             not_valid = True
+    if not in_phased_region:
+        if len(b) != 1:
+             not_valid = True
     return not_valid
     
 def detect_snp(chrom,pileupcolumn,**kwargs):    
@@ -226,6 +236,20 @@ def detect_snp(chrom,pileupcolumn,**kwargs):
         return None
     snp = vcf_snp(bases,chrom,pileupcolumn.pos,**kwargs)
     return snp
+
+def just_phased_regions(files):
+    regions = []
+    phased_regions = phased_blocks_merged_seq(files)
+    for region in phased_regions:
+        r = region[0:3]
+        h = region[3]
+        if h == "0":
+            r.append(False)
+        else:
+            r.append(True)
+        if r not in regions:
+            regions.append(r)
+    return regions
     
 def detect_snps(files,sample):
     samfile = pysam.AlignmentFile(files.merged_assembly_to_ref_phased)
@@ -235,7 +259,7 @@ def detect_snps(files,sample):
     vcf_fh.write("%s\n" % "\n".join(header))
 
     ref = pysam.FastaFile(files.ref)
-    phased_regions = phased_blocks_merged_seq(files)
+    phased_regions = just_phased_regions(files) #phased_blocks_merged_seq(files)
     ccs_snps = snps_from_reads(files)
     bedfh = {
         "sv": load_bed_regions(files.sv_coords,True),

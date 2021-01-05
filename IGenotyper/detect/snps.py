@@ -53,13 +53,10 @@ def snp_feat_overlap(feat_coords,chrom,pos):
 def alternate_allele(reads,ref_base,in_phased_region):
     aa = set()
     for read_name,read_base,read_qual,read_hap in reads:
+        if in_phased_region and	read_hap == "0":
+            continue
         if read_base != ref_base:
-            if in_phased_region:
-                if read_hap != "0":
-                    aa.add(read_base)
-            else:
-                if read_hap == "0":
-                    aa.add(read_base)
+            aa.add(read_base)
     if len(aa) == 0:
         aa = set(".")
     return ",".join(list(aa))
@@ -96,15 +93,15 @@ def phased_hap_bases(reads):
 
 def missing_hap_genotype(hap1_base,hap2_base,ref_base):
     genotype = None
-    if hap1_base == None and hap2_base == None:
-        genotype = "./."
-    elif hap1_base == None:
-        if hap2_base != ref_base:
+    # if hap1_base == None and hap2_base == None:
+    #     genotype = "./."
+    if hap1_base != None:
+        if hap1_base != ref_base:
             genotype = "./1"
         else:
             genotype = "./0"
-    elif hap2_base == None:
-        if hap1_base != ref_base:
+    elif hap2_base != None:
+        if hap2_base != ref_base:
             genotype = "./1"
         else:
             genotype = "./0"
@@ -192,21 +189,31 @@ def snp_info(bases,chrom,pos,**kwargs):
 def vcf_snp(bases,chrom,pos,**kwargs):    
     in_phased_region = snp_feat_overlap(kwargs["phased_regions"],chrom,pos)
     ref_base = kwargs["ref"].fetch(chrom,pos,pos + 1).upper()
+    aa = alternate_allele(bases,ref_base,in_phased_region)
+    gt = genotype(bases,in_phased_region,ref_base)
+    if gt in ["0/0","./0"]:
+        assert aa == "."
+    else:
+        assert aa != "."
     snp = [
         chrom,
         pos + 1,
         ".",
         ref_base,
-        alternate_allele(bases,ref_base,in_phased_region),
+        aa,
         quality(bases),
         "PASS",
         snp_info(bases,chrom,pos,**kwargs),
         "GT",
-        genotype(bases,in_phased_region,ref_base)
+        gt
         ]
     return "\t".join(map(str,snp))
 
 def not_valid_pos(bases,chrom,pos,**kwargs):
+    # Not allowed
+    # 1.
+    # 2.
+    # 3. Positions with only unphased contigs in phased regions
     not_valid = False
     in_phased_region = snp_feat_overlap(kwargs["phased_regions"],chrom,pos)
     hap_bases = {}
@@ -226,6 +233,9 @@ def not_valid_pos(bases,chrom,pos,**kwargs):
     if not in_phased_region:
         if len(b) != 1:
              not_valid = True
+    if in_phased_region:
+        if "1" not in hap_bases and "2" not in hap_bases:
+            not_valid = True
     return not_valid
     
 def detect_snp(chrom,pileupcolumn,**kwargs):    

@@ -29,6 +29,9 @@ class FileManager():
         self.assembly_merge = "%s/assembly/merge" % self.outdir
         self.alleles = "%s/alleles" % self.outdir
         self.msa = "%s/variants/msa" % self.outdir
+        self.msa_fasta = "%s/variants/msa/fasta" % self.outdir
+        self.msa_msa = "%s/variants/msa/msa" % self.outdir
+        self.msa_variants = "%s/variants/msa/variants" % self.outdir
         self.log = "%s/logs" % self.outdir
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
         self.scripts = "%s/scripts" % self.package_directory
@@ -43,7 +46,10 @@ class FileManager():
             self.tmp,
             self.log,
             self.msa,
-            self.assembly_merge
+            self.assembly_merge,
+            self.msa_fasta,
+            self.msa_msa,
+            self.msa_variants
         ]
 
         create_folders(folders)

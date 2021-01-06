@@ -160,16 +160,18 @@ def non_overlapping(data):
 
 #     return intersect
 
-def assembly_coords(files):
+
+def assembly_coords(assembly_to_ref):
     coords = []
-    samfile = pysam.AlignmentFile(files.assembly_to_ref)
+    samfile = pysam.AlignmentFile(assembly_to_ref)
     for read in samfile:
         if skip_read(read):
             continue
         chrom = samfile.get_reference_name(read.reference_id)
-        hap = get_haplotype(read.query_name)
-        if coords_not_overlapping(read,chrom):
-            continue
+        hap = read.get_tag("RG",True)[0]        
+        # hap = get_haplotype(read.query_name)
+        # if coords_not_overlapping(read,chrom):
+        #     continue
         coords.append([chrom,int(read.reference_start),int(read.reference_end),hap,read.query_name])
     return coords
 

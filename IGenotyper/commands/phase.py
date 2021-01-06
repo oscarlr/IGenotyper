@@ -9,6 +9,7 @@ from IGenotyper.command_lines.alignments import Align
 from IGenotyper.phasing.snps import generate_phased_snps
 from IGenotyper.phasing.reads import phase_subreads,phase_ccs
 from IGenotyper.phasing.mapping_adj import fix_ccs_alignment,fix_subread_alignment
+from IGenotyper.phasing.stats import phasing_stats
 
 import os
 import json
@@ -80,6 +81,8 @@ def run_phasing(
             generate_phased_snps(files,cpu,sample)
             phase_ccs(files,sample)
             phase_subreads(files,sample)
+
+    phasing_stats()
 
     save_parameters(files,sample,input_vcf)
     clean_up(files)

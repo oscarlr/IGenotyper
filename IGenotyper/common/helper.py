@@ -90,6 +90,21 @@ def load_bed_regions(bedfile,add_fourth=False):
                 bed_regions.append([chrom,start,end])
     return bed_regions
 
+def snps_from_reads(files):
+    snps = {}
+    with open(files.phased_snps_vcf,'r') as vcf_fh:
+        for line in vcf_fh:
+            if line.startswith("#"):
+                continue
+            line = line.rstrip().split("\t")
+            chrom = line[0]
+            position = line[1]
+            genotype = line[9].split(":")[0]
+            if chrom not in snps:
+                snps[chrom] = {}
+            snps[chrom][int(position) - 1] = genotype
+    return snps
+
 def vcf_header(sample_name="sample"):
     i = datetime.datetime.now()
     line = [ "##fileformat=VCFv4.2",
@@ -272,3 +287,4 @@ def get_mapping_pos(bam):
         chrom = samfile.get_reference_name(read.reference_id)
         pos[read.query_name] = [chrom,read.reference_start,read.reference_end]
     return pos
+

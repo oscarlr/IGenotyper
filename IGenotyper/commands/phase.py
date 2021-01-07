@@ -3,8 +3,10 @@ from IGenotyper.files import FileManager
 from IGenotyper.common.cpu import CpuManager
 
 from IGenotyper.common.helper import non_emptyfile,clean_up,remove_vcfs
+
 from IGenotyper.command_lines.reads import ReadManip
 from IGenotyper.command_lines.alignments import Align
+from IGenotyper.command_lines.plot import PlotTools
 
 from IGenotyper.phasing.snps import generate_phased_snps
 from IGenotyper.phasing.reads import phase_subreads,phase_ccs
@@ -12,6 +14,7 @@ from IGenotyper.phasing.mapping_adj import fix_ccs_alignment,fix_subread_alignme
 from IGenotyper.phasing.stats import phasing_stats
 
 import os
+import sys
 import json
 from shutil import copyfile
 
@@ -50,13 +53,20 @@ def run_phasing(
         tmp
 ):
     files = FileManager(outdir,bam,tmp)
-    if non_emptyfile(files.input_args):
-        sys.exit(0)
+
+    # if non_emptyfile(files.input_args):
+    #     sys.exit(0)
         
     cpu = CpuManager(threads,mem,cluster,queue,walltime)
     reads_command_line = ReadManip(files,cpu,sample)
     align_command_line = Align(files,cpu,sample)
+    plot_command_line = PlotTools(files,cpu,sample)
     
+    phasing_stats(sample,files,plot_command_line,align_command_line)
+    
+    if non_emptyfile(files.input_args):
+        sys.exit(0)
+
     reads_command_line.generate_ccs_reads()
     
     if not non_emptyfile(files.phased_snps_vcf):
@@ -82,7 +92,7 @@ def run_phasing(
             phase_ccs(files,sample)
             phase_subreads(files,sample)
 
-    phasing_stats()
+    phasing_stats(files)
 
     save_parameters(files,sample,input_vcf)
     clean_up(files)

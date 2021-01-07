@@ -86,4 +86,23 @@ class Align(CommandLine):
         self.map_reads_with_blasr(self.files.merged_assembly,prefix,self.files.ref,opt)
         self.sam_to_sorted_bam(prefix,self.files.merged_assembly_to_ref)
 
+    def bam_to_bigwig(self,bam,bigwig):
+        args =  [bam,bigwig]
+        command = ("CONDA_BASE=$(conda info --base) \n"
+                   "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
+                   "conda activate pygenometracks \n"
+                   "bamCoverage -b %s -o %s " % tuple(args))
+        self.run_command(command,bigwig)
+
+    def select_hap_sequence(self,bam,hap,outbam):
+        args = [bam,hap,outbam,
+                outbam]
+        command= ("samtools view -Sbh -F 3884 %s -r %s > %s \n"
+                  "samtools index %s " % tuple(args))
+        self.run_command(command,outbam)
+        
+    def hap_bam_to_bigwig(self,bam,hap,bigwig):
+        outbam = "%s/%s.bam" % (self.files.tmp,hap)
+        self.select_hap_sequence(bam,hap,outbam)
+        self.bam_to_bigwig(outbam,bigwig)
         

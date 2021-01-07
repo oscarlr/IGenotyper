@@ -32,10 +32,12 @@ class FileManager():
         self.msa_fasta = "%s/variants/msa/fasta" % self.outdir
         self.msa_msa = "%s/variants/msa/msa" % self.outdir
         self.msa_variants = "%s/variants/msa/variants" % self.outdir
+        self.plots = "%s/plots" % self.outdir
         self.log = "%s/logs" % self.outdir
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
-        self.scripts = "%s/scripts" % self.package_directory
-
+        self.scripts = "%s/scripts" % self.package_directory        
+        self.templates = "%s/templates" % self.package_directory
+        
         folders = [
             self.outdir,
             self.preprocess,
@@ -49,7 +51,8 @@ class FileManager():
             self.assembly_merge,
             self.msa_fasta,
             self.msa_msa,
-            self.msa_variants
+            self.msa_variants,
+            self.plots
         ]
 
         create_folders(folders)
@@ -98,3 +101,9 @@ class FileManager():
         self.merged_assembly_to_ref_phased = "%s/merged_assembly_to_ref_phased.sorted.bam" % self.alignments
         self.merged_phased_snps_vcf = "%s/snvs_phased_from_merged_seq.vcf" % self.variants
         self.phased_blocks_merged_seq = "%s/phased_blocks_merged_seq.txt" % self.variants
+
+        self.plot_ccs_read_lengths = "%s/ccs_read_lengths.png" % self.plots
+        self.plot_ccs_read_quals = "%s/ccs_read_quals.png" % self.plots
+        self.plot_phasing = "%s/phasing.png" % self.plots
+        
+        self.report = "%s/report.html" % self.outdir

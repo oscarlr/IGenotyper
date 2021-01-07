@@ -3,27 +3,12 @@ import json
 import pysam
 from pybedtools import BedTool
 
-from IGenotyper.common.helper import load_bed_regions,vcf_header,phased_blocks_merged_seq,intervals_overlapping
+from IGenotyper.common.helper import load_bed_regions,vcf_header,phased_blocks_merged_seq,intervals_overlapping,snps_from_reads
 
 
 # from IGenotyper.helper import assembly_location,intervals_overlapping,get_haplotype,load_bed_regions,vcf_header,get_phased_blocks,coords_not_overlapping,assembly_coords,create_directory,get_ref_seq,skip_read #non_overlapping,interval_intersection,contig_coords,hap_coords,non_overlapping_hap_coords,skip_read,coords_not_overlapping
 
 #from IGenotyper.commands.msa.msa_to_variants_without_hmm import path_to_variants
-
-def snps_from_reads(files):
-    snps = {}
-    with open(files.phased_snps_vcf,'r') as vcf_fh:
-        for line in vcf_fh:
-            if line.startswith("#"):
-                continue
-            line = line.rstrip().split("\t")
-            chrom = line[0]
-            position = line[1]
-            genotype = line[9].split(":")[0]
-            if chrom not in snps:
-                snps[chrom] = {}                
-            snps[chrom][int(position) - 1] = genotype
-    return snps
 
 def snp_read_genotype(ccs_snps,chrom,pos):
     genotype = False

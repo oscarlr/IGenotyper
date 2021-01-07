@@ -4,6 +4,7 @@ from IGenotyper.common.cpu import CpuManager
 
 from IGenotyper.common.helper import non_emptyfile,clean_up,remove_vcfs
 
+from IGenotyper.command_lines.snps import Snps
 from IGenotyper.command_lines.reads import ReadManip
 from IGenotyper.command_lines.alignments import Align
 from IGenotyper.command_lines.plot import PlotTools
@@ -61,6 +62,9 @@ def run_phasing(
     reads_command_line = ReadManip(files,cpu,sample)
     align_command_line = Align(files,cpu,sample)
     plot_command_line = PlotTools(files,cpu,sample)
+    snps_command_line = Snps(files,cpu,sample)
+
+    snps_command_line.phased_blocks_from_ccs_snps()
     
     phasing_stats(sample,files,plot_command_line,align_command_line)
     
@@ -92,6 +96,7 @@ def run_phasing(
             phase_ccs(files,sample)
             phase_subreads(files,sample)
 
+    snps_command_line.phased_blocks_from_ccs_snps()
     phasing_stats(files)
 
     save_parameters(files,sample,input_vcf)

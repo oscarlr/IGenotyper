@@ -12,7 +12,8 @@ setup(
     author_email='oscar.rodriguez@icahn.mssm.edu',
     description='',
     package_data={'IGenotyper': ['data/*',
-                                 'scripts/*']},
+                                 'templates/*',
+                                 'scripts/*',]},
     entry_points = {
         'console_scripts': ['IG = IGenotyper.main:main']
     }

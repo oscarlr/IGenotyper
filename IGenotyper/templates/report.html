@@ -41,6 +41,15 @@ li{
   box-sizing: border-box;
 }
 
+.SG .box2{
+  width: 100%;
+  padding: 1% 2%;
+  background: #fff;
+  min-height: 100px;
+  max-height: 220px;
+  box-sizing: border-box;
+}
+
 img.resize {
   max-width: 40%;
   max-height: 40%;
@@ -77,11 +86,22 @@ img.resize {
       </div>
     </li>
   </ul>
-
+  <h2>Links</h2>
+    <ul class="SG">
+      <li class="sgLi">
+	<div class="box2">
+	  <h3>Alignments</h3>
+	  <ol>
+	    <li><a href="alignments/ccs_to_ref_phased.sorted.bam">Phased CCS reads to igh</a></li>
+	    <li><a href="alignments/merged_assembly_to_ref_phased.sorted.bam">Phased assembly to igh</a></li>
+	  </ol>
+	</div>
+      </li>
+    </ul>
   <h3>CCS read lengths</h3>      
   <img class="resize" src="plots/ccs_read_lengths.png">
   <h3>CCS quality scores</h3>      
   <img class="resize" src="plots/ccs_read_quals.png">
-  <h2>Phasing output</h2>
+  <h2>Phasing results</h2>
   <img src="plots/phasing.png">
 </html>

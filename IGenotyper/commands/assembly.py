@@ -62,10 +62,9 @@ def run_assembly(
     snps = Snps(files,cpu,sample)
     assembly_command_line = Assembly(files,cpu,sample)
     align_command_line = Align(files,cpu,sample)
-    snps_command_line = Snps(files,cpu,sample)
+    #snps_command_line = Snps(files,cpu,sample)
     
     if not non_emptyfile(files.assembly_fastq):
-        snps.phased_blocks_from_ccs_snps()
         phased_blocks = get_phased_blocks(files)
         assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
         assembly_command_line.run_assembly_scripts(assembly_scripts)

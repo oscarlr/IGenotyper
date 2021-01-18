@@ -64,9 +64,9 @@ def run_phasing(
     plot_command_line = PlotTools(files,cpu,sample)
     snps_command_line = Snps(files,cpu,sample)
 
-    snps_command_line.phased_blocks_from_ccs_snps()
+    # snps_command_line.phased_blocks_from_ccs_snps()
     
-    phasing_stats(sample,files,plot_command_line,align_command_line)
+    # phasing_stats(sample,files,plot_command_line,align_command_line)
     
     if non_emptyfile(files.input_args):
         sys.exit(0)

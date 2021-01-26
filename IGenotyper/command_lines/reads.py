@@ -23,6 +23,9 @@ class ReadManip(CommandLine):
                    "%s #> /dev/null 2>&1" % tuple(args))
         output_file = "%s.pbi" % self.files.ccs_bam
         self.run_command(command,output_file)
+        command = "samtools index %s" % self.files.ccs_bam
+        output_file = "%s.bai" % self.files.ccs_bam
+        self.run_command(command,output_file)
 
     def turn_ccs_reads_to_fastq(self):
         args = [self.files.ccs_fastq_unedited,

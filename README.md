@@ -16,4 +16,11 @@ cd cluster
 python setup.py install
 export SJOB_DEFALLOC=NONE
 
+wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta
+wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta.fai
+
+sawriter reference.fasta
+cp reference.fasta* 
+
+
 ```

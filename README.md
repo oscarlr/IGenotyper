@@ -8,6 +8,13 @@ Requirements:
 git clone https://github.com/oscarlr/IGv2.git
 cd IGv2
 conda env create -f environment.yml
+python setup.py install
+
+git clone https://github.com/oscarlr/cluster
+cd cluster
+python setup.py install
+export SJOB_DEFALLOC=NONE
+
 ```
 
 ## Quick start

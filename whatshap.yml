@@ -1,0 +1,45 @@
+name: whatshap-latest
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - bcftools=1.9=ha228f0b_4
+  - bzip2=1.0.8=h7b6447c_0
+  - ca-certificates=2021.1.19=h06a4308_0
+  - certifi=2020.12.5=py36h06a4308_0
+  - curl=7.71.1=hbc83047_1
+  - krb5=1.18.2=h173b8e3_0
+  - ld_impl_linux-64=2.33.1=h53a641e_7
+  - libcurl=7.71.1=h20c2e04_1
+  - libdeflate=1.0=h14c3975_1
+  - libedit=3.1.20191231=h14c3975_1
+  - libffi=3.3=he6710b0_2
+  - libgcc-ng=9.1.0=hdf63c60_0
+  - libssh2=1.9.0=h1ba5d50_1
+  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - ncurses=6.2=he6710b0_1
+  - openssl=1.1.1j=h27cfd23_0
+  - pip=20.3.3=py36h06a4308_0
+  - python=3.6.12=hcff3b4d_2
+  - readline=8.0=h7b6447c_0
+  - setuptools=51.0.0=py36h06a4308_2
+  - sqlite=3.33.0=h62c20be_0
+  - tk=8.6.10=hbc83047_0
+  - wheel=0.36.2=pyhd3eb1b0_0
+  - xz=5.2.5=h7b6447c_0
+  - zlib=1.2.11=h7b6447c_3
+  - pip:
+    - biopython==1.78
+    - dataclasses==0.8
+    - decorator==4.4.2
+    - networkx==2.5
+    - numpy==1.19.4
+    - pyfaidx==0.5.9.2
+    - pysam==0.16.0.1
+    - scipy==1.5.4
+    - six==1.15.0
+    - whatshap==1.1.dev78+g8f4c0c0
+    - xopen==1.0.1
+
+

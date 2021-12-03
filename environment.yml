@@ -1,4 +1,4 @@
-name: IGv2
+name: IGv2_testing
 channels:
   - conda-forge
   - bioconda
@@ -75,6 +75,7 @@ dependencies:
   - libxml2=2.9.10=he19cac6_1
   - linecache2=1.0.0=py_1
   - lz4-c=1.9.2=he6710b0_0
+  - matplotlib=2.2.3=py27hb69df0a_0
   - mmtf-python=1.0.2=py27_0
   - msgpack-python=0.6.1=py27hfd86e86_1
   - ncurses=6.1=he6710b0_1
@@ -83,6 +84,7 @@ dependencies:
   - openjdk=8.0.152=h7b6447c_3
   - openssl=1.1.1h=h516909a_0
   - pango=1.42.4=h7062337_4
+  - pandas=0.22.0=py27hf484d3e_0
   - pbbam=1.0.6=hc16d5b3_1
   - pbccs=4.2.0=1
   - pbcommand=1.1.1=py27h24bf2e0_1
@@ -134,5 +136,5 @@ dependencies:
   - zstd=1.4.4=h0b5b093_3
   - pip:
     - pybedtools==0.8.1
-prefix: /sc/hydra/projects/sharpa01a/rodrio10-hydra/miniconda2/envs/IGv2
+
 

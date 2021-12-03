@@ -8,6 +8,7 @@ Requirements:
 git clone https://github.com/oscarlr/IGv2.git
 cd IGv2
 conda env create -f environment.yml
+conda activate IGv2_testing
 python setup.py install
 
 git clone https://github.com/oscarlr/cluster

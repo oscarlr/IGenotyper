@@ -103,6 +103,8 @@ def call_variants(files,fastafile,chrom,start,end,command_line_tools,variants):
 def detect_msa_variants(files,sample,command_line_tools):
     variants = []
     coords = msa_coords(files)
+    print(coords)
+    sys.exit()
     for phase in coords:
         if phase == "phased":
             haps = ["1","2"]
@@ -115,7 +117,7 @@ def detect_msa_variants(files,sample,command_line_tools):
             fastafile,seq_blank = extract_sequence(files,chrom,start,end,haps)
             if seq_blank:
                 continue
-            call_variants(files,fastafile,chrom,start,end,command_line_tools,variants)
+            call_variants(files,fastafile,chrom,start,end,command_line_tools,variants)            
     variants.sort(key=lambda x: int(x[2]))
     header = ["chrom","start","end","event","genotype","size","ref","hap1","hap2","seq_start","seq_end","msa"]
     indels_fh = open(files.indels_assembly_bed,'w')

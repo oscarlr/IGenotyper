@@ -1,7 +1,7 @@
 #!/bin/env python
 import os
 from lsf.lsf import Lsf
-from IGenotyper.helper import non_emptyfile
+from IGenotyper.common.helper import non_emptyfile
 
 
 class CommandLine:
@@ -11,8 +11,12 @@ class CommandLine:
         self.sample = sample
     
     def run_command(self,command,output_file):
-        if not non_emptyfile(output_file):
+        print "-----------------"
+        print "Checking %s" % output_file        
+        if not non_emptyfile(output_file):    
+            print "\tRunning command... \n%s" % command            
             os.system(command)
+        print "-----------------"
             
 # def generate_ccs_reads(cpu,input_bam,ccs_bam,min_passes=2):
 #     print "Generating CCS reads..."

@@ -8,7 +8,8 @@ def main():
     commands = [
         "phase",
         "assembly",
-        "detect"
+        "detect",
+        "alleles"
     ]
 
     if len(sys.argv) < 2:

@@ -110,7 +110,7 @@ def three_sequence_msa_variants(clufn,chrom,ref_start,ref_end,outfn): #,quality_
             sv_type, genotype = Counter(msa_states).most_common(1)[0][0].split("_") #current_sv.split("_")
             sv_len = max(len(current_sv_hap1_seq),len(current_sv_hap2_seq),len(current_sv_ref_seq))
             # if quality_scores != None:
-            #     hap1_qual_score = get_quality_scores(sequence["hap1"],quality_scores["hap1"][0],current_sv_start_index,current_sv_current_index,padding)
+            #     hap1_qual_score = get_quality_scores(sequence["hap1"],quality_scores["hap1"][0],current_sv_start_index,current_sv_cur`rent_index,padding)
             #     hap2_qual_score = get_quality_scores(sequence["hap2"],quality_scores["hap2"][0],current_sv_start_index,current_sv_current_index,padding)
             # else:
             #     hap1_qual_score = 60

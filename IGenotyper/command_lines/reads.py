@@ -1,7 +1,7 @@
 #!/bin/env python
 import os
 from lsf.lsf import Lsf
-from IGenotyper.helper import non_emptyfile
+from IGenotyper.common.helper import non_emptyfile
 
 from IGenotyper.command_lines.clt import CommandLine
 
@@ -10,7 +10,7 @@ class ReadManip(CommandLine):
         CommandLine.__init__(self,files,cpu,sample)
 
     def generate_ccs_reads(self):
-        print "Generating CCS reads..."
+        #print "Generating CCS reads..."
         min_passes = 2
         args = [self.cpu.threads,
                 min_passes,
@@ -32,7 +32,7 @@ class ReadManip(CommandLine):
                 self.files.ccs_bam,
                 self.files.ccs_fastq_unedited,
                 self.files.ccs_fastq]
-        command = ("bam2fastq "
+        command = ("bam2fasta "
                    "-o %s %s\n"
-                   "zcat %s.fastq.gz | sed 's/ccs/0_8/g' > %s\n" % tuple(args))
+                   "zcat %s.fasta.gz | sed 's/ccs/0_8/g' > %s\n" % tuple(args))
         self.run_command(command,self.files.ccs_fastq)

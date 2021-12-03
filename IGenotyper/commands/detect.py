@@ -10,6 +10,7 @@ from IGenotyper.command_lines.variants import VariantTools
 
 from IGenotyper.detect.snps import detect_snps
 from IGenotyper.detect.msa_indels_svs import detect_msa_variants
+from IGenotyper.detect.alleles import detect_alleles
 
 #from IGenotyper.clt import CommandLine
 #from IGenotyper.helper import assembly_location,intervals_overlapping,get_haplotype,load_bed_regions,vcf_header,get_phased_blocks,coords_not_overlapping,assembly_coords,create_directory,get_ref_seq,skip_read #non_overlapping,interval_intersection,contig_coords,hap_coords,non_overlapping_hap_coords,skip_read,coords_not_overlapping
@@ -403,9 +404,11 @@ def run_detect(outdir,hom):
     cpu = CpuManager()
     variants_command_line = VariantTools(files,cpu,sample)
     
-    #detect_snps(files,sample)
-    detect_msa_variants(files,sample,variants_command_line)
-    
+    detect_snps(files,sample)
+    #detect_msa_variants(files,sample,variants_command_line)
+
+    #detect_alleles(files)
+
 def main(args):
     run_detect(**vars(args))
     

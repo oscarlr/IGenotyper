@@ -9,6 +9,10 @@ import pybedtools
 from string import Template
 from collections import namedtuple
 
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+
 def create_folders(folders):
     for folder in folders:
         if not os.path.exists(folder):
@@ -61,8 +65,10 @@ def assembly_location(read_name):
     end = int(read_origin.split(":")[1].split("-")[1])
     return [chrom,start,end]
 
-def get_haplotype(read_name):
-    return read_name.split("_")[1].split('=')[1]
+def get_haplotype(entry):
+    #return read_name.split("_")[1].split('=')[1]
+    hap_start = entry.index("h=") + len("h=")
+    return entry[hap_start:hap_start + 1]
 
 def intervals_overlapping(a, b):
     if a[0] != b[0]:
@@ -264,15 +270,15 @@ def add_haplotype_to_blocks(phased_blocks,regions,haplotype):
 def get_phased_blocks(files,phased_blocks_source):
     phased_blocks = []
     target_regions = pybedtools.BedTool(files.target_regions)
-    phased_regions = pybedtools.BedTool(get_phased_regions(phased_blocks_source))
+    phased_regions = target_regions.intersect(pybedtools.BedTool(get_phased_regions(phased_blocks_source)))
     unphased_regions = target_regions.subtract(phased_regions)
     for haplotype in ["1","2"]:
         phased_blocks = add_haplotype_to_blocks(phased_blocks,phased_regions,haplotype)
     phased_blocks = add_haplotype_to_blocks(phased_blocks,unphased_regions,"0")
     return phased_blocks
 
-def phased_blocks_merged_seq(files):
-    return get_phased_blocks(files,files.phased_blocks_merged_seq)
+# def phased_blocks_merged_seq(files):
+#     return get_phased_blocks(files,files.phased_blocks_merged_seq)
     
 def get_ref_seq(files,chrom,start,end):
     fasta = pysam.FastaFile(files.ref)
@@ -287,4 +293,63 @@ def get_mapping_pos(bam):
         chrom = samfile.get_reference_name(read.reference_id)
         pos[read.query_name] = [chrom,read.reference_start,read.reference_end]
     return pos
+
+def get_igh_region(target_regions_bed):
+    igh_chrom = "igh"
+    igh_start = None
+    igh_end = None
+    target_regions = pybedtools.BedTool(target_regions_bed)
+    for target_region in target_regions:
+        if str(target_region.chrom) == igh_chrom:
+            igh_start = int(target_region.start)
+            igh_end = int(target_region.end)
+    assert igh_start != None
+    assert igh_end != None
+    return (igh_chrom,igh_start,igh_end)
+
+def extract_sequence_from(read,chrom,start,end):
+    read_start = None
+    read_end = None
+    aligned_pairs = read.get_aligned_pairs()
+    for query_pos, ref_pos in aligned_pairs:
+        if query_pos == None:
+            continue
+        if ref_pos == None:
+            continue
+        if ref_pos <= start:
+            read_start = query_pos
+        if ref_pos > end:
+            break        
+        read_end = query_pos
+    if read_start == None:
+        return ""
+    if read_end == None:
+        return ""
+    return read.query_sequence[read_start:read_end].upper()
+
+def extract_sequence(phased_bam,bed,fasta):
+    records = []
+    coords = load_bed_regions(bed,True)
+    samfile = pysam.AlignmentFile(phased_bam)
+    for chrom,start,end,feat in coords:
+        i = 0
+        for read in samfile.fetch(chrom,start,end):
+            if skip_read(read):
+                continue
+            if "h=" not in read.query_name:
+                hap = read.get_tag("RG",True)[0]
+            else:
+                hap = get_haplotype(read.query_name)
+            name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (feat,hap,chrom,start,end,i)
+            seq = extract_sequence_from(read,chrom,start,end)
+            if len(seq) == 0:
+                continue
+            record = SeqRecord(Seq(seq),id=name,name=name,description="")
+            records.append(record)
+            i += 1
+    SeqIO.write(records,fasta,"fasta") 
+
+def run_type(bam):
+    sam = pysam.AlignmentFile(bam,check_sq=False)
+    return dict(sam.header)['RG'][0]['PM']
 

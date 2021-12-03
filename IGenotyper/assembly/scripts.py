@@ -1,7 +1,7 @@
 #!/bin/env python
 import os
 
-from IGenotyper.common.helper import create_directory,write_to_bashfile
+from IGenotyper.common.helper import create_directory,write_to_bashfile,run_type
 
 def region_assembled(directory):
     assembled = False
@@ -25,7 +25,8 @@ def create_assemble_script(files,cpu,dir,chrom,start,end,hap):
         "subreads": files.input_bam,
         "subreads_to_ref": files.subreads_to_ref_phased,
         "python_scripts": files.scripts,
-        "ref": files.ref
+        "ref": files.ref,
+        "pacbio_machine": run_type(files.input_bam)
     }
     write_to_bashfile(files.assembly_script,bashfile,params)
     return bashfile

@@ -1,7 +1,7 @@
 #!/bin/env python
 import os
 from lsf.lsf import Lsf
-from IGenotyper.helper import non_emptyfile
+from IGenotyper.common.helper import non_emptyfile
 
 from IGenotyper.command_lines.clt import CommandLine
 
@@ -22,6 +22,7 @@ class Align(CommandLine):
                    "--sa %s.sa "
                    "--out %s.sam "
                    "--sam "
+                   "--noSplitSubreads "
                    "%s "
                    "--nproc %s " % tuple(args))
         output_file = "%s.sam" % prefix
@@ -47,11 +48,35 @@ class Align(CommandLine):
                 self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
             self.select_target_reads(sorted_bam_tmp,self.files.subreads_to_ref)
 
+    def create_igh_ref(self):
+        print "Creating igh reference..."
+        igh_ref = "%s/igh_ref.fasta" % self.files.tmp        
+        args = [self.files.ref,igh_ref,
+                igh_ref,
+                igh_ref]
+        command = ("samtools faidx %s igh > %s \n"
+                   "samtools faidx %s \n"
+                   "sawriter %s \n" % tuple(args))
+        self.run_command(command,"%s.sa" % igh_ref)
+        return igh_ref
+
+    def map_igh_assembly(self):
+        print "Mapping igh assembly..."
+        igh_ref = self.create_igh_ref()
+        prefix = "%s/igh_assembly_to_ref" % self.files.tmp
+        self.map_reads_with_blasr(self.files.igh_assembly_fasta,prefix,igh_ref,"--insertion 0 --deletion 0 --minMatch 15 --maxMatch 30")
+        self.sam_to_sorted_bam(prefix,self.files.igh_assembly_to_ref)
+
+        prefix = "%s/igh_assembly_to_ref_subs" % self.files.tmp
+        self.map_reads_with_blasr(self.files.igh_assembly_fasta,prefix,igh_ref,"--insertion 16 --deletion 20 --minMatch 15 --maxMatch 30")
+        self.sam_to_sorted_bam(prefix,self.files.igh_assembly_to_ref_subs)
+        
     def map_assembly(self):
         print "Mapping assembly..."
         prefix = "%s/assembly_to_ref" % self.files.tmp
-        self.map_reads_with_blasr(self.files.assembly_fastq,prefix,self.files.ref)
+        self.map_reads_with_blasr(self.files.assembly_fasta,prefix,self.files.ref,"--insertion 0 --deletion 0 --minMatch 15 --maxMatch 30")
         self.sam_to_sorted_bam(prefix,self.files.assembly_to_ref)
+        self.map_igh_assembly()
 
     def select_target_reads(self,bam_file,igh_bam_file):
         ## add aim regions
@@ -64,12 +89,13 @@ class Align(CommandLine):
     def map_ccs_reads(self):
         print "Mapping CCS reads..."
         prefix = "%s/ccs_to_ref" % self.files.tmp
-        sorted_bam_tmp = "%s.sorted.bam" % prefix
+        #sorted_bam_tmp = "%s.sorted.bam" % prefix
         if not non_emptyfile(self.files.ccs_to_ref):
-            if not non_emptyfile("%s.bai" % sorted_bam_tmp):
+            if not non_emptyfile("%s.bai" % self.files.ccs_to_ref):
                 self.map_reads_with_blasr(self.files.ccs_fastq,prefix,self.files.ref)
-                self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
-            self.select_target_reads(sorted_bam_tmp,self.files.ccs_to_ref)
+                self.sam_to_sorted_bam(prefix,self.files.ccs_to_ref)
+                #self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
+            #self.select_target_reads(sorted_bam_tmp,self.files.ccs_to_ref)
 
     def blast_seq(self,fastafn,blast_out):
         args = [fastafn,fastafn,blast_out]
@@ -99,10 +125,16 @@ class Align(CommandLine):
                 outbam]
         command= ("samtools view -Sbh -F 3884 %s -r %s > %s \n"
                   "samtools index %s " % tuple(args))
-        self.run_command(command,outbam)
+        self.run_command(command,"%s.bai" % outbam)
         
     def hap_bam_to_bigwig(self,bam,hap,bigwig):
         outbam = "%s/%s.bam" % (self.files.tmp,hap)
         self.select_hap_sequence(bam,hap,outbam)
         self.bam_to_bigwig(outbam,bigwig)
         
+    def primary_alignments(self,inbam,outbam):
+        args = [inbam,outbam,
+                outbam]
+        command = ("samtools view -Sbh -F 3884 %s > %s \n"
+                   "samtools index %s " % tuple(args))
+        self.run_command(command,"%s.bai" % outbam)

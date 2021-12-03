@@ -3,7 +3,7 @@ import json
 import pysam
 from pybedtools import BedTool
 
-from IGenotyper.common.helper import load_bed_regions,vcf_header,phased_blocks_merged_seq,intervals_overlapping,snps_from_reads
+from IGenotyper.common.helper import load_bed_regions,vcf_header,intervals_overlapping,snps_from_reads,get_phased_blocks
 
 
 # from IGenotyper.helper import assembly_location,intervals_overlapping,get_haplotype,load_bed_regions,vcf_header,get_phased_blocks,coords_not_overlapping,assembly_coords,create_directory,get_ref_seq,skip_read #non_overlapping,interval_intersection,contig_coords,hap_coords,non_overlapping_hap_coords,skip_read,coords_not_overlapping
@@ -28,7 +28,7 @@ def snp_feat_overlap(feat_coords,chrom,pos):
     feat = False
     for feat_coord in feat_coords:
         if chrom != feat_coord[0]:
-            return feat
+            continue
         feat_pos = feat_coord[:3] #[feat_coord[1],feat_coord[2]]
         snp_pos = [chrom,pos,pos+1]
         if intervals_overlapping(feat_pos,snp_pos):
@@ -42,9 +42,13 @@ def alternate_allele(reads,ref_base,in_phased_region):
             continue
         if read_base != ref_base:
             aa.add(read_base)
-    if len(aa) == 0:
+    if len(aa) == 0:        
         aa = set(".")
-    return ",".join(list(aa))
+    aa = list(aa)
+    if len(aa) > 1:
+        if "DEL" in aa:
+            aa.remove("DEL")
+    return ",".join(aa)
 
 def quality(reads):
     qual = 0.0
@@ -54,14 +58,24 @@ def quality(reads):
         count += 1
     return int(round(qual/count,0))
 
-def unphased_genotype(reads,ref_base):
+def unphased_genotype(reads,ref_base,sv):
     genotype = None
     bases = set()
     for read_name,read_base,read_qual,read_hap in reads:
         if read_base == ref_base:
-	    genotype = "0/0"
+            if sv == False:
+                genotype = "0/0"
+            else:
+                genotype = "0/0" #"./0"
         elif read_base != ref_base:
-            genotype = "1/1"
+            if read_base == "DEL":
+                alt = "."
+            else:
+                alt = "1"
+            if sv == False:
+                genotype = "%s/%s" % (alt,alt)
+            else:
+                genotype = "%s/%s" % (alt,alt)
         bases.add(read_base)
     assert len(bases) == 1
     return genotype
@@ -94,29 +108,42 @@ def missing_hap_genotype(hap1_base,hap2_base,ref_base):
 
 def hap_genotype(hap1_base,hap2_base,ref_base):
     genotype = None
-    #assert not ((ref_base == hap1_base) and (ref_base == hap2_base))
+    #assert not ((ref_base == hap1_base) and (ref_base == hap2_base))    
     if ref_base == hap1_base:
         if ref_base == hap2_base:
             genotype = "0/0"
         else:
-            genotype = "0/1"
+            if hap2_base == "DEL":
+                genotype = "./0"
+            else:
+                genotype = "0/1"
     elif ref_base == hap2_base:
-        genotype = "0/1"
+        if hap1_base == "DEL":
+            genotype = "./0"
+        else:
+            genotype = "0/1"
     elif hap1_base == hap2_base:
-        genotype = "1/1"
+        if hap1_base == "DEL":
+            genotype = "./."
+        else:
+            genotype = "1/1"
     elif hap1_base != hap2_base:
-        genotype = "1/2"
+        if "DEL" not in [hap1_base,hap2_base]:
+            genotype = "1/2"
+        else:
+            genotype = "./1"
     return genotype
         
-def genotype(reads,in_phased_region,ref_base):
+def genotype(reads,in_phased_region,ref_base,sv):
     if in_phased_region == False:
-        gt = unphased_genotype(reads,ref_base)
+        gt = unphased_genotype(reads,ref_base,sv)
     else:
         hap1_base,hap2_base = phased_hap_bases(reads)
-        if None in [hap1_base,hap2_base]:        
-            gt = missing_hap_genotype(hap1_base,hap2_base,ref_base)
-        else:
-            gt = hap_genotype(hap1_base,hap2_base,ref_base)
+        assert None not in [hap1_base,hap2_base]
+        # if None in [hap1_base,hap2_base]:        
+        #     gt = missing_hap_genotype(hap1_base,hap2_base,ref_base)
+        # else:
+        gt = hap_genotype(hap1_base,hap2_base,ref_base)
     assert gt != None
     return gt
 
@@ -124,21 +151,31 @@ def snp_in_feature(feature_fn,chrom,pos):
     bed = load_bed_regions(feature_fn,True)
     return snp_feat_overlap(bed,chrom,pos)
 
-def reads_in_pos(pileupcolumn):
+def reads_in_pos(pileupcolumn,in_phased_region):
     reads = []
+    # Iteration over every ref pos
     for pileupread in pileupcolumn.pileups:
-        if pileupread.is_del:
-            continue
-        if pileupread.is_refskip:
-            continue
+        hap = pileupread.alignment.get_tag("RG",True)[0]
+        if in_phased_region:
+            if hap == "0":
+                continue
+        else:
+            if hap in ["1","2"]:
+                continue
+        if pileupread.indel > 0:
+            base = pileupread.alignment.query_sequence[pileupread.query_position:pileupread.query_position + pileupread.indel]
+        elif pileupread.is_del == 1:
+            base = "DEL"
+        else:
+            base = pileupread.alignment.query_sequence[pileupread.query_position]
         if pileupread.alignment.query_qualities == None:
             qual = 60
         else:
             qual = pileupread.alignment.query_qualities[pileupread.query_position]
         reads.append([pileupread.alignment.query_name,
-                      pileupread.alignment.query_sequence[pileupread.query_position],
+                      base,
                       qual,
-                      pileupread.alignment.get_tag("RG",True)[0]])
+                      hap])
     return reads
 
 def snp_info(bases,chrom,pos,**kwargs):
@@ -175,11 +212,15 @@ def vcf_snp(bases,chrom,pos,**kwargs):
     in_phased_region = snp_feat_overlap(kwargs["phased_regions"],chrom,pos)
     ref_base = kwargs["ref"].fetch(chrom,pos,pos + 1).upper()
     aa = alternate_allele(bases,ref_base,in_phased_region)
-    gt = genotype(bases,in_phased_region,ref_base)
-    if gt in ["0/0","./0"]:
+    sv = snp_feat_overlap(kwargs["sv"],chrom,pos)
+    gt = genotype(bases,in_phased_region,ref_base,sv)
+    if gt == "0/0":
         assert aa == "."
     else:
         assert aa != "."
+    if aa == "DEL":
+        assert "." in gt
+        aa = "."
     snp = [
         chrom,
         pos + 1,
@@ -202,9 +243,9 @@ def not_valid_pos(bases,chrom,pos,**kwargs):
     not_valid = False
     in_phased_region = snp_feat_overlap(kwargs["phased_regions"],chrom,pos)
     hap_bases = {}
-    b = set()
+    #b = set()
     for name,base,qual,hap in bases:
-        b.add(base)
+        #b.add(base)
         if in_phased_region and hap == "0":
             continue
         if (not in_phased_region) and (hap in ["1","2"]):
@@ -213,18 +254,25 @@ def not_valid_pos(bases,chrom,pos,**kwargs):
             hap_bases[hap] = set()
         hap_bases[hap].add(base)
     for hap in hap_bases:
-        if len(hap_bases[hap]) > 1:
+        if len(hap_bases[hap]) != 1:
             not_valid = True
-    if not in_phased_region:
-        if len(b) != 1:
-             not_valid = True
+    # if not in_phased_region:
+    #     #if len(b) != 1:
+    #     if len(hap_bases["0"]) != 1:
+    #          not_valid = True
     if in_phased_region:
-        if "1" not in hap_bases and "2" not in hap_bases:
+        if "1" not in hap_bases:
+            not_valid = True
+        if "2" not in hap_bases:
+            not_valid = True
+    else:
+        if "0" not in hap_bases:
             not_valid = True
     return not_valid
     
 def detect_snp(chrom,pileupcolumn,**kwargs):    
-    bases = reads_in_pos(pileupcolumn)
+    in_phased_region = snp_feat_overlap(kwargs["phased_regions"],chrom,pileupcolumn.pos)
+    bases = reads_in_pos(pileupcolumn,in_phased_region)
     if len(bases) == 0:
         return None
     if not_valid_pos(bases,chrom,pileupcolumn.pos,**kwargs):
@@ -234,7 +282,7 @@ def detect_snp(chrom,pileupcolumn,**kwargs):
 
 def just_phased_regions(files):
     regions = []
-    phased_regions = phased_blocks_merged_seq(files)
+    phased_regions = get_phased_blocks(files,files.phased_blocks) #phased_blocks_merged_seq(files)
     for region in phased_regions:
         r = region[0:3]
         h = region[3]
@@ -247,11 +295,8 @@ def just_phased_regions(files):
     return regions
     
 def detect_snps(files,sample):
-    samfile = pysam.AlignmentFile(files.merged_assembly_to_ref_phased)
+    #samfile = pysam.AlignmentFile(files.merged_assembly_to_ref_phased)
     capture_regions = load_bed_regions(files.target_regions)
-    header = vcf_header(sample)
-    vcf_fh = open(files.snps_assembly_vcf, 'w')
-    vcf_fh.write("%s\n" % "\n".join(header))
 
     ref = pysam.FastaFile(files.ref)
     phased_regions = just_phased_regions(files) #phased_blocks_merged_seq(files)
@@ -264,10 +309,23 @@ def detect_snps(files,sample):
         "gene": load_bed_regions(files.gene_coords,True),
         "vdj": load_bed_regions(files.vdj_coords,True)
         }
-    
-    for chrom,start,end in capture_regions:
-        for pileupcolumn in samfile.pileup(chrom,start,end):
-            snp = detect_snp(chrom,pileupcolumn,ref=ref,phased_regions=phased_regions,ccs_snps=ccs_snps,**bedfh)
-            if snp != None:                    
-                vcf_fh.write("%s\n" % snp)
-    vcf_fh.close()
+
+    header = vcf_header(sample)
+    for type_ in ["igh_assembly"]: #["assembly","igh_assembly"]:
+        if type_ == "assembly":            
+            vcf_fh = open(files.snps_assembly_vcf, 'w')
+            vcf_fh.write("%s\n" % "\n".join(header))    
+            samfile = pysam.AlignmentFile(files.assembly_to_ref_phased)
+        if type_ == "igh_assembly":
+            vcf_fh = open(files.snps_igh_assembly_vcf, 'w')
+            vcf_fh.write("%s\n" % "\n".join(header))    
+            samfile = pysam.AlignmentFile(files.igh_assembly_to_ref_subs_phased)
+        for chrom,start,end in capture_regions:
+            if type_ == "igh_assembly":
+                if chrom != "igh":
+                    continue
+            for pileupcolumn in samfile.pileup(chrom,start,end):
+                snp = detect_snp(chrom,pileupcolumn,ref=ref,phased_regions=phased_regions,ccs_snps=ccs_snps,**bedfh)
+                if snp != None:                    
+                    vcf_fh.write("%s\n" % snp)
+        vcf_fh.close()

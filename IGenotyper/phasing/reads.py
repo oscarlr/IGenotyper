@@ -91,3 +91,7 @@ def phase_ccs(files,sample):
 def phase_merged_seqs(files,sample):
     phase_alignments(files.merged_phased_snps_vcf,files.merged_assembly_to_ref,sample,files.merged_assembly_to_ref_phased)
     
+def phase_assembly(files,sample):
+    phase_alignments(files.phased_snps_vcf,files.assembly_to_ref,sample,files.assembly_to_ref_phased)
+    phase_alignments(files.phased_snps_vcf,files.igh_assembly_to_ref,sample,files.igh_assembly_to_ref_phased)
+    phase_alignments(files.phased_snps_vcf,files.igh_assembly_to_ref_subs,sample,files.igh_assembly_to_ref_subs_phased)

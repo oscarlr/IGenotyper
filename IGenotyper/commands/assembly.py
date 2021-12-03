@@ -7,16 +7,16 @@ from Bio import SeqIO
 from IGenotyper.files import FileManager
 
 from IGenotyper.common.cpu import CpuManager
-from IGenotyper.common.helper import non_emptyfile,get_phased_blocks
+from IGenotyper.common.helper import non_emptyfile,get_phased_blocks,run_type
 
 from IGenotyper.command_lines.assembly import Assembly
 from IGenotyper.command_lines.alignments import Align
-from IGenotyper.command_lines.snps import Snps
+#from IGenotyper.command_lines.snps import Snps
 
-from IGenotyper.phasing.reads import phase_merged_seqs
+from IGenotyper.phasing.reads import phase_assembly
 
 from IGenotyper.assembly.scripts import get_assembly_scripts
-from IGenotyper.assembly.merge_assembly import merge_assembly
+#from IGenotyper.assembly.merge_assembly import merge_assembly
 
 def add_arguments(subparser):
     subparser.add_argument('--threads', metavar='THREADS', default=1, help='Number of threads')
@@ -26,11 +26,17 @@ def add_arguments(subparser):
     subparser.add_argument('--walltime', metavar='WALLTIME', default=2, help='Walltime for cluster')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
-def combine_sequence(files,phased_blocks,outfile,type_):
+def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None):
     seqs = []
     for chrom, start, end, hap in phased_blocks:
+        if chrom_select != None:
+            if chrom != chrom_select:
+                continue
         dir = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
-        contig = "%s/contigs.%s" % (dir,type_)
+        if run_type(files.input_bam) == "SEQUELII":
+            contig = "%s/canu/canu.contigs.%s" % (dir,type_)
+        else:
+            contig = "%s/contigs.%s" % (dir,type_)
         if os.path.isfile(contig):
             contigs = list(SeqIO.parse(contig,type_))
             total_contigs = len(contigs)
@@ -42,7 +48,8 @@ def combine_sequence(files,phased_blocks,outfile,type_):
 
 def combine_assembly_sequences(files,phased_blocks):
     combine_sequence(files,phased_blocks,files.assembly_fasta,"fasta")
-    combine_sequence(files,phased_blocks,files.assembly_fastq,"fastq")
+    combine_sequence(files,phased_blocks,files.igh_assembly_fasta,"fasta","igh")
+    #combine_sequence(files,phased_blocks,files.assembly_fastq,"fastq")
 
 def run_assembly(
         threads,
@@ -59,23 +66,26 @@ def run_assembly(
     sample = phasing_args["sample"]
 
     cpu = CpuManager(threads, mem, cluster, queue, walltime)
-    snps = Snps(files,cpu,sample)
+    #snps = Snps(files,cpu,sample)
     assembly_command_line = Assembly(files,cpu,sample)
     align_command_line = Align(files,cpu,sample)
     #snps_command_line = Snps(files,cpu,sample)
+
+    phased_blocks = get_phased_blocks(files,files.phased_blocks)    
     
-    if not non_emptyfile(files.assembly_fastq):
-        phased_blocks = get_phased_blocks(files)
-        assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
-        assembly_command_line.run_assembly_scripts(assembly_scripts)
-        combine_assembly_sequences(files,phased_blocks)
-
+    #if not non_emptyfile(files.assembly_fastq): # CHANGED to GET CONSTANT
+    pacbio_machine = run_type(files.input_bam)
+    assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
+    assembly_command_line.run_assembly_scripts(assembly_scripts)
+    
+    combine_assembly_sequences(files,phased_blocks)
     align_command_line.map_assembly()
+    phase_assembly(files,sample)
 
-    merge_assembly(files,align_command_line,sample)
-    snps.phase_snvs_with_merged_seq()
-    snps.phased_blocks_from_merged_seq()
-    phase_merged_seqs(files,sample)
+    # merge_assembly(files,align_command_line,sample)
+    # snps.phase_snvs_with_merged_seq()
+    # snps.phased_blocks_from_merged_seq()
+    # phase_merged_seqs(files,sample)
 
     
 def main(args):

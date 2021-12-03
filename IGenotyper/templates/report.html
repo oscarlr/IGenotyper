@@ -27,7 +27,7 @@ li{
   
 .SG .sgLi{
   min-width: 40%;
-  /*margin: 2% .35%;*/
+  margin: .5% .35%;
   display: inline-flex;
   box-shadow: 0 2px 4px rgba(0,0,0, .2);
 }
@@ -68,7 +68,7 @@ img.resize {
 	<ul>
 	  <li>Number of subreads: ${num_subreads}</li>
 	  <li>Number of CCS reads: ${num_ccs}</li>
-	  <li>Number of on target CCS reads: ${on_target_count}</li>
+	  <li>Number of on target CCS reads: ${on_target_count} (${percent_on_target})</li>
 	  <li>Average CCS read length: ${ccs_read_length_avg}</li>
 	  <li>Average CCS read quality: ${ccs_quals_avg}</li>
 	</ul> 
@@ -78,11 +78,22 @@ img.resize {
       <div class="box">
         <h3>Phasing stats from CCS reads</h3>
         <ul>
-	  <li>Number of IGH bases covered: ${ref_bases_ccs_coverage}</li>
           <li>Number of IGH phased SNPs: ${num_phased_snps}</li>
           <li>Number of IGH unphased SNPs: ${num_unphased_snps}</li>
           <li>Number of IGH phased bases: ${phased_bases}</li>
         </ul>
+      </div>
+    </li>
+    <li class="sgLi">
+      <div class="box">
+	<h3>Coverage</h3>
+	<ul>
+	  <li>Mean: ${mean_coverage}</li>
+	  <li>Standard deviation: ${std_coverage}</li>
+	  <li>Coefficient of variation: ${coeff_of_var}</li>
+	  <li>Number of IGH bases covered: ${ref_bases_ccs_coverage}</li>
+	  <li>Number of IGHV genes with less than 10x coverage: ${num_genes_no_cov}</li>
+	</ul> 
       </div>
     </li>
   </ul>
@@ -102,6 +113,10 @@ img.resize {
   <img class="resize" src="plots/ccs_read_lengths.png">
   <h3>CCS quality scores</h3>      
   <img class="resize" src="plots/ccs_read_quals.png">
+  <h2>Gene coverage</h2>
+  <img width="1100" src="plots/gene_cov.png"> 
   <h2>Phasing results</h2>
   <img src="plots/phasing.png">
+  <h2>SV gene coverage</h2>
+  <img width="600" src="plots/sv_gene_cov.png">
 </html>

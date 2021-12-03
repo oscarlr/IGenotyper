@@ -5,7 +5,7 @@ setup(
     version='1.1',
     packages=['IGenotyper', 'IGenotyper.commands','IGenotyper.command_lines',
               'IGenotyper.common','IGenotyper.phasing','IGenotyper.assembly',
-              'IGenotyper.detect'],
+              'IGenotyper.detect','IGenotyper.alleles'],
     url='oscarlr.github.io',
     license='',
     author='Oscar Rodriguez',

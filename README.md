@@ -2,9 +2,7 @@
 ## Installation
 
 Requirements:
-```
-Conda
-```
+1. Conda
 
 ```
 git clone https://github.com/oscarlr/IGv2.git

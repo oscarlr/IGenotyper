@@ -324,6 +324,8 @@ def detect_snps(files,sample):
             if type_ == "igh_assembly":
                 if chrom != "igh":
                     continue
+            if chrom == "chr7_142346196_21653":
+                continue
             for pileupcolumn in samfile.pileup(chrom,start,end):
                 snp = detect_snp(chrom,pileupcolumn,ref=ref,phased_regions=phased_regions,ccs_snps=ccs_snps,**bedfh)
                 if snp != None:                    

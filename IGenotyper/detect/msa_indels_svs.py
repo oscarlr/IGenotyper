@@ -103,8 +103,6 @@ def call_variants(files,fastafile,chrom,start,end,command_line_tools,variants):
 def detect_msa_variants(files,sample,command_line_tools):
     variants = []
     coords = msa_coords(files)
-    print(coords)
-    sys.exit()
     for phase in coords:
         if phase == "phased":
             haps = ["1","2"]

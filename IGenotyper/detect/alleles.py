@@ -70,7 +70,7 @@ def write_genotypes(alleles,fn):
                 fh.write("%s\n" % "\t".join(map(str,output)))
 
 def detect_alleles(files):
-    extract_sequence(files.igh_assembly_to_ref_phased,files.gene_coords,files.assembly_genes_fasta)
+    extract_sequence(files.assembly_to_ref_phased,files.gene_coords,files.assembly_genes_fasta)
     extract_sequence(files.ccs_to_ref_phased,files.gene_coords,files.ccs_genes_fasta)
     
     assembly_alleles = genotype_genes(files.assembly_genes_fasta,files.allele_db)

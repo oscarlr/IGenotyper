@@ -8,7 +8,7 @@ conda env create -f whatshap.yml
 conda env create -f pygenometracks.yml
 
 conda env create -f environment.yml
-conda activate IGv2_testing
+conda activate IGv2
 python setup.py install
 
 cd ..

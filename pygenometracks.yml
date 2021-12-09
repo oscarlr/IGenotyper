@@ -124,5 +124,5 @@ dependencies:
   - zipp=3.4.0=py_0
   - zlib=1.2.11=h516909a_1010
   - zstd=1.4.8=ha95c52a_1
-prefix: /home/o0rodr03/miniconda2/envs/pygenometracks
+
 

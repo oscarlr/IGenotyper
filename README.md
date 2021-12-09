@@ -5,6 +5,7 @@
 git clone https://github.com/oscarlr/IGv2.git
 cd IGv2
 conda env create -f whatshap.yml
+conda env create -f pygenometracks.yml
 
 conda env create -f environment.yml
 conda activate IGv2_testing

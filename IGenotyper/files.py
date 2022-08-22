@@ -4,10 +4,11 @@ import json
 from IGenotyper.common.helper import create_folders,non_emptyfile,run_type
 
 class FileManager():
-    def __init__(self,outdir,bam=None,tmp = "tmp"):
+    def __init__(self,outdir,bam=None,tmp = "tmp",rhesus=False):
         self.outdir = outdir
         self.input_bam = bam
         self.tmp = tmp
+        self.rhesus = rhesus
 
         if tmp == "tmp":
             self.tmp = "%s/%s" % (self.outdir,tmp)
@@ -71,15 +72,20 @@ class FileManager():
         self.ccs_fastq = "%s/ccs.fasta" % self.tmp
         self.ccs_fastq_unedited = "%s/ccs.fasta" % self.tmp
 
-        self.ref = "%s/data/reference.fasta" % self.package_directory
-        self.target_regions = "%s/data/target_regions.bed" % self.package_directory
-        self.sv_coords = "%s/data/sv_coords.bed" % self.package_directory
-        self.introns = "%s/data/introns.bed" % self.package_directory
-        self.lpart1 = "%s/data/lpart1.bed" % self.package_directory
-        self.rss = "%s/data/rss.bed" % self.package_directory
-        self.gene_coords = "%s/data/gene_coords.bed" % self.package_directory
-        self.vdj_coords = "%s/data/vdj_coords.bed" % self.package_directory
-        self.allele_db = "%s/data/alleles.fasta" % self.package_directory
+        data_directory = "%s/data" % self.package_directory
+
+        if self.rhesus:
+            data_directory = "%s/data/rhesus" % self.package_directory
+        
+        self.ref = "%s/reference.fasta" % data_directory
+        self.target_regions = "%s/target_regions.bed" % data_directory
+        self.sv_coords = "%s/sv_coords.bed" % data_directory
+        self.introns = "%s/introns.bed" % data_directory
+        self.lpart1 = "%s/lpart1.bed" % data_directory
+        self.rss = "%s/rss.bed" % data_directory
+        self.gene_coords = "%s/gene_coords.bed" % data_directory
+        self.vdj_coords = "%s/vdj_coords.bed" % data_directory
+        self.allele_db = "%s/alleles.fasta" % data_directory
 
         self.subreads_to_ref = "%s/subreads_to_ref.sorted.bam" % self.preprocess
         self.subreads_to_ref_phased = "%s/subreads_to_ref_phased.sorted.bam" % self.alignments

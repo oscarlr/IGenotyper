@@ -120,7 +120,7 @@ def phased_snps(files):
 
 def min_coverage(feature,cov = 10):
     return int(feature.name) >= 10
-    
+
 def covered_regions(bam):
     a = BedTool(bam)
     b = a.genomecov(bg=True)

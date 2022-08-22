@@ -1,10 +1,6 @@
 #!/bin/env python
 import pysam
 
-from IGenotyper.common.helper import non_emptyfile
-from IGenotyper.common.vcffn import read_in_phased_vcf
-from IGenotyper.common.bamfn import create_phased_bam_header,create_tag
-
 def calculate_tag(basetups,hap_dict):
     '''
     Returns a 0, 1 or -1 as the value of a read
@@ -82,16 +78,3 @@ def phase_alignments(vcffn,bam,sample,outbam):
     phased_bam.close()
     pysam.index(outbam)
 
-def phase_subreads(files,sample):
-    phase_alignments(files.phased_snps_vcf,files.subreads_to_ref,sample,files.subreads_to_ref_phased)
-
-def phase_ccs(files,sample):
-    phase_alignments(files.phased_snps_vcf,files.ccs_to_ref,sample,files.ccs_to_ref_phased)
-    
-def phase_merged_seqs(files,sample):
-    phase_alignments(files.merged_phased_snps_vcf,files.merged_assembly_to_ref,sample,files.merged_assembly_to_ref_phased)
-    
-def phase_assembly(files,sample):
-    phase_alignments(files.phased_snps_vcf,files.assembly_to_ref,sample,files.assembly_to_ref_phased)
-    phase_alignments(files.phased_snps_vcf,files.igh_assembly_to_ref,sample,files.igh_assembly_to_ref_phased)
-    phase_alignments(files.phased_snps_vcf,files.igh_assembly_to_ref_subs,sample,files.igh_assembly_to_ref_subs_phased)

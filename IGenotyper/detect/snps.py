@@ -3,7 +3,7 @@ import json
 import pysam
 from pybedtools import BedTool
 
-from IGenotyper.common.helper import load_bed_regions,vcf_header,intervals_overlapping,snps_from_reads,get_phased_blocks
+from IGenotyper.common.helper import load_bed_regions,vcf_header,intervals_overlapping,snps_from_reads,get_phased_blocks,get_haplotype
 
 
 # from IGenotyper.helper import assembly_location,intervals_overlapping,get_haplotype,load_bed_regions,vcf_header,get_phased_blocks,coords_not_overlapping,assembly_coords,create_directory,get_ref_seq,skip_read #non_overlapping,interval_intersection,contig_coords,hap_coords,non_overlapping_hap_coords,skip_read,coords_not_overlapping
@@ -155,7 +155,8 @@ def reads_in_pos(pileupcolumn,in_phased_region):
     reads = []
     # Iteration over every ref pos
     for pileupread in pileupcolumn.pileups:
-        hap = pileupread.alignment.get_tag("RG",True)[0]
+        #hap = pileupread.alignment.get_tag("RG",True)[0]
+        hap = get_haplotype(pileupread.alignment.query_name)
         if in_phased_region:
             if hap == "0":
                 continue
@@ -324,8 +325,6 @@ def detect_snps(files,sample):
             if type_ == "igh_assembly":
                 if chrom != "igh":
                     continue
-            if "chr7" in chrom:
-                continue
             for pileupcolumn in samfile.pileup(chrom,start,end):
                 snp = detect_snp(chrom,pileupcolumn,ref=ref,phased_regions=phased_regions,ccs_snps=ccs_snps,**bedfh)
                 if snp != None:                    

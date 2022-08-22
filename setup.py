@@ -13,7 +13,8 @@ setup(
     description='',
     package_data={'IGenotyper': ['data/*',
                                  'templates/*',
-                                 'scripts/*',]},
+                                 'scripts/*',
+                                 'data/rhesus/*']},
     entry_points = {
         'console_scripts': ['IG = IGenotyper.main:main']
     }

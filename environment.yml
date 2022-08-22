@@ -1,4 +1,4 @@
-name: IGv2
+name: IGv2_rhesus
 channels:
   - conda-forge
   - bioconda

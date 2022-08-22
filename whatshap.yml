@@ -1,4 +1,4 @@
-name: whatshap-latest
+name: whatshap-latest-3
 channels:
   - bioconda
   - defaults

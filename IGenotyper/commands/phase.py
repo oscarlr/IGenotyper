@@ -20,6 +20,7 @@ import pysam
 from shutil import copyfile
 
 def add_arguments(subparser):
+    subparser.add_argument('--rhesus',default=False, action='store_true')
     subparser.add_argument('--sample',metavar='SAMPLE',default="sample",help='Name of sample')
     subparser.add_argument('--threads',metavar='THREADS',default=1,help='Number of threads')
     subparser.add_argument('--mem',metavar='MEM',default=20,help='Memory for cluster')
@@ -51,9 +52,10 @@ def run_phasing(
         queue,
         walltime,
         input_vcf,
-        tmp
+        tmp,
+        rhesus
 ):    
-    files = FileManager(outdir,bam,tmp)
+    files = FileManager(outdir,bam,tmp,rhesus)
 
     if non_emptyfile(files.input_args):        
         cpu = CpuManager(threads,mem,cluster,queue,walltime)

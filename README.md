@@ -33,7 +33,6 @@ export SJOB_DEFALLOC=NONE
 ## Getting IGH specific reference or download IGH specific reference
 
 ```
-
 wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta
 wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta.fai
 

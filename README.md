@@ -4,6 +4,7 @@
 [Installation](#installation)  
 [Getting IGH specific reference](#getting-igh-specific-reference)<br>
 [Testing IGenotyper installation](#testing-igenotyper-installation)<br>
+[Usage](#usage)<br>
 [Running IGenotyper](#running-igenotyper)<br>
 [Explanation of steps](#explanation-of-steps)<br>
 [Output directories](#output-directories)<br>
@@ -108,3 +109,46 @@ optional arguments:
   -h, --help  show this help message and exit
   --hom HOM   Add homozygous reference genotype
 ```
+
+## Explanation of steps
+### Phase
+In the first step `--phase`, the subreads and CCS reads are phased and aligned to the IGH specific reference. Each read has a read group annotation. A read group annotation of 1 and 2 corresponds to haplotype 1 and 2. The read group annotation of 0 corresponds to unassignable reads. In IGV, you can seperate these reads by left clicking and selecting group by read group.
+
+### Assemble
+In the second step `--assembly`, the haplotypes are assembled. During this process folders will be created for each region/haplotype block. Within each folder there is a bash script that runs the assembly process. These can be submitted as a single job into the cluster (this speeds up the process).
+
+### Detect
+In the third step `--detect`, SNVs, indels, SVs and gene/alleles are genotyped. A VCF file is created for the SNVs, a BED file for the indels and SVs, a TAB-delimited file for the gene/alleles calls.  
+
+## Output directories
+alignments  alleles  assembly  logs  plots  preprocessed  report.html  tmp  variants
+| Directories            | Description                                          |
+|------------------------|------------------------------------------------------|
+| `<output>/alignments`  | Alignments of CCS, subreads and contigs (phased and unphased) |
+| `<output>/assembly`    | Assembly of IGH locus                                |
+| `<output>/variants`    | SNVs, indels and SVs                                 |
+| `<output>/alleles`     | Alleles in sample                                    |
+| `<output>/logs`        | Log files with input parameters                   |
+| `<output>/tmp`         | Temporary files. Could be deleted.                   |
+
+## Output files
+1. `alignments/`
+    1. `ccs_to_ref*`: CCS reads aligned to reference
+    2. `contigs_to_ref*`: All assembled contigs aligned to refernece
+    3. `igh_contigs_to_ref*`: IGH assembled contigs aligned to igh reference
+2. `assembly/`
+    1. `contigs.fasta`: All assembled contigs
+    2. `igh_contigs.fasta`: IGH assembled contigs
+3. `alleles/`
+    1. `assembly_alleles.bed`: Alleles extracted from the assembly for each gene
+    2. `assembly_genes.fasta`: Fasta sequence from the assembly for each gene/allele
+    3. `ccs_alleles.bed`: Alleles extracted from the CCS reads for each gene
+    4. `ccs_genes.fasta`: Fasta sequence from the CCS reads for each gene/allele
+4. `logs/`
+    1. `gene_cov.txt`: Haplotype coverage for each gene
+5. `variants/`
+    1. `snvs_phased_from_ccs.vcf`: Phased SNVs detected from the CCS reads
+    2. `snvs_assembly.vcf`: SNVS detected from the assembly
+    3. `indel_assembly.bed`: Indels detected from the assembly
+    4. `sv_assembly.bed`: SVs detected from the assembly
+    5. `phased_blocks.txt`: Phased haplotype blocks

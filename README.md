@@ -79,7 +79,8 @@ optional arguments:
   --walltime WALLTIME  Walltime for cluster
   --tmp TMP            Temporary folder
   --input_vcf VCF      Phased VCF file to phase reads
-
+```
+```
 IG assembly --help
 usage: IG assembly [-h] [--threads THREADS] [--mem MEM] [--cluster]
                    [--queue QUEUE] [--walltime WALLTIME]
@@ -95,7 +96,8 @@ optional arguments:
   --cluster            Use cluster
   --queue QUEUE        Queue for cluster
   --walltime WALLTIME  Walltime for cluster
-  
+```
+```
 IG detect --help
 usage: IG detect [-h] [--hom HOM] OUTDIR
 

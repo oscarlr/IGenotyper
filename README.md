@@ -3,7 +3,7 @@
 [Introduction](#introduction)  
 [Requirements](#requirements)  
 [Installation](#installation)  
-[Getting IGH specific reference](#Getting-igh-specific-reference)<br>
+[Getting IGH specific reference](#getting-igh-specific-reference)<br>
 [Testing IGenotyper installation](#testing-igenotyper-installation)<br>
 [Running IGenotyper](#running-igenotyper)<br>
 [Explanation of steps](#explanation-of-steps)<br>

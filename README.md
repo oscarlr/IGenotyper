@@ -28,14 +28,15 @@ git clone https://github.com/oscarlr/cluster
 cd cluster
 python setup.py install
 export SJOB_DEFALLOC=NONE
-
-wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta
-wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta.fai
 ```
 
 ## Getting IGH specific reference or download IGH specific reference
 
 ```
+
+wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta
+wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta.fai
+
 sawriter reference.fasta
 cp reference.fasta* ~/anaconda3/envs/IGv2_testing/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/
 

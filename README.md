@@ -52,6 +52,8 @@ Todo
 
 ## Running IGenotyper
 ```
+# <pacbio bam file> must have a pbi and bai index. They can be created using pbindex and samtool index, respectively.
+
 IG phase <pacbio bam file> <output> 
 IG assemble <output> 
 IG detect <output> 

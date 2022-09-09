@@ -37,11 +37,11 @@ wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/refe
 wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta.fai
 
 sawriter reference.fasta
-cp reference.fasta* ~/anaconda3/envs/IGv2_testing/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/
+cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/
 
 # For rheMac10
 sawriter reference.fasta
-cp reference.fasta* ~/anaconda3/envs/IGv2_testing/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/rhesus/
+cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/rhesus/
 
 ```
 

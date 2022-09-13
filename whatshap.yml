@@ -46,5 +46,4 @@ dependencies:
     - six==1.15.0
     - whatshap==1.1.dev78+g8f4c0c0
     - xopen==1.0.1
-prefix: /home/o0rodr03/miniconda2/envs/whatshap-latest
 

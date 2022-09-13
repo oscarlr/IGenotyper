@@ -14,14 +14,18 @@
 ## Installation
 
 ```
+
 git clone https://github.com/oscarlr/IGv2.git
 cd IGv2
-conda env create -f whatshap.yml
+
 conda env create -f pygenometracks.yml
 
 conda env create -f environment.yml
 conda activate IGv2
 python setup.py install
+
+conda env create -n whatshap-latest
+pip install git+https://github.com/whatshap/whatshap
 
 cd ..
 git clone https://github.com/oscarlr/cluster

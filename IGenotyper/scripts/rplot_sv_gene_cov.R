@@ -4,6 +4,8 @@ library(reshape2)
 
 args = commandArgs(trailingOnly=TRUE)
 
+options(bitmapType='cairo')
+
 infn = args[1]
 outfn = args[2]
 

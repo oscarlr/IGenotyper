@@ -2,6 +2,8 @@
 library(ggplot2)
 library(reshape2)
 
+options(bitmapType='cairo')
+
 args = commandArgs(trailingOnly=TRUE)
 
 infn = args[1]

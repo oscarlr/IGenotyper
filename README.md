@@ -30,6 +30,7 @@ conda activate whatshap-latest
 pip install git+https://github.com/whatshap/whatshap
 conda deactivate
 
+conda activate IGv2
 cd ..
 git clone https://github.com/oscarlr/cluster
 cd cluster

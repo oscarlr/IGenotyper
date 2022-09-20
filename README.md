@@ -25,7 +25,7 @@ conda activate IGv2
 python setup.py install
 conda deactivate
 
-conda env create -n whatshap-latest python=3.7
+conda create -n whatshap-latest python=3.7
 conda activate whatshap-latest
 pip install git+https://github.com/whatshap/whatshap
 conda deactivate

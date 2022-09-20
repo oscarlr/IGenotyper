@@ -56,6 +56,8 @@ cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper
 ## Testing IGenotyper installation
 ```
 IG phase subset_bam/reads.bam test
+IG assembly test
+
 ```
 
 ## Running IGenotyper
@@ -63,7 +65,7 @@ IG phase subset_bam/reads.bam test
 # <pacbio bam file> must have a pbi and bai index. They can be created using pbindex and samtools index, respectively.
 
 IG phase <pacbio bam file> <output> 
-IG assemble <output> 
+IG assembly <output> 
 IG detect <output> 
 ```
 

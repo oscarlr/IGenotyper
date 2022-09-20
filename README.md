@@ -55,7 +55,7 @@ cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper
 
 ## Testing IGenotyper installation
 ```
-IG phase subset_bam/reads.bam test
+IG phase subset_bam/reads.bam test # There will be an warning message about no reads for hap0.bw -- you can ignore this
 IG assembly test
 
 ```

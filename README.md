@@ -23,9 +23,12 @@ conda env create -f pygenometracks.yml
 conda env create -f environment.yml
 conda activate IGv2
 python setup.py install
+conda deactivate
 
 conda env create -n whatshap-latest
+conda activate whatshap-latest
 pip install git+https://github.com/whatshap/whatshap
+conda deactivate
 
 cd ..
 git clone https://github.com/oscarlr/cluster

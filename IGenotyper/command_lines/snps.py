@@ -15,7 +15,7 @@ class Snps(CommandLine):
                 snp_candidates]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest \n"
+                   "conda activate whatshap-latest_testing \n"
                    "whatshap find_snv_candidates "
                    "--sample %s "
                    "%s "
@@ -36,7 +36,7 @@ class Snps(CommandLine):
                 bam]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest \n"
+                   "conda activate whatshap-latest_testing \n"
                    "whatshap genotype "
                    "--sample %s "
                    "--ignore-read-groups "
@@ -59,7 +59,7 @@ class Snps(CommandLine):
                 bams]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest \n"
+                   "conda activate whatshap-latest_testing \n"
                    "whatshap phase "
                    "--sample %s "
                    "--reference %s "
@@ -74,22 +74,29 @@ class Snps(CommandLine):
     def phase_ccs_snvs(self):
         self.phase_snps(self.files.phased_snps_vcf,self.files.snps_vcf,[self.files.ccs_to_ref])
         
-    def phased_blocks(self,phased_blocks,phased_snps_vcf):
+    def phased_blocks(self,phased_blocks,chr_lengths,phased_snps_vcf):
         args = [self.sample,
                 phased_blocks,
+                chr_lengths,
                 phased_snps_vcf]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest \n"
+                   "conda activate whatshap-latest_testing \n"
                    "whatshap stats "
                    "--sample %s "
-                    "--block-list %s "
+                   "--block-list %s "
+                   "--chr-lengths %s "
                    "%s #> /dev/null 2>&1\n"
                    "conda deactivate" % tuple(args))
         self.run_command(command,phased_blocks)
 
     def phased_blocks_from_ccs_snps(self):
-        self.phased_blocks(self.files.phased_blocks,self.files.phased_snps_vcf)    
+        with open(self.files.chr_lengths,'w') as outfh:            
+            with open("%s.fai" % self.files.ref,'r') as infh:
+                for line in infh:
+                    line = line.rstrip().split('\t')
+                    outfh.write("%s\t%s\n" % (line[0],line[1]))
+        self.phased_blocks(self.files.phased_blocks,self.files.chr_lengths,self.files.phased_snps_vcf)    
 
     def phase_snvs_with_merged_seq(self):
         bams = [self.files.ccs_to_ref,self.files.merged_assembly_to_ref]

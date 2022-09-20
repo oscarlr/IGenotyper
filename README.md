@@ -55,7 +55,7 @@ cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper
 
 ## Testing IGenotyper installation
 ```
-Todo
+IG phase subset_bam/reads.bam test
 ```
 
 ## Running IGenotyper

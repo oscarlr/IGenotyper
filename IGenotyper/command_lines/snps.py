@@ -15,7 +15,7 @@ class Snps(CommandLine):
                 snp_candidates]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest_testing \n"
+                   "conda activate whatshap-latest \n"
                    "whatshap find_snv_candidates "
                    "--sample %s "
                    "%s "
@@ -36,7 +36,7 @@ class Snps(CommandLine):
                 bam]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest_testing \n"
+                   "conda activate whatshap-latest \n"
                    "whatshap genotype "
                    "--sample %s "
                    "--ignore-read-groups "
@@ -59,7 +59,7 @@ class Snps(CommandLine):
                 bams]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest_testing \n"
+                   "conda activate whatshap-latest \n"
                    "whatshap phase "
                    "--sample %s "
                    "--reference %s "
@@ -81,7 +81,7 @@ class Snps(CommandLine):
                 phased_snps_vcf]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest_testing \n"
+                   "conda activate whatshap-latest \n"
                    "whatshap stats "
                    "--sample %s "
                    "--block-list %s "

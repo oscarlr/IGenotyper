@@ -55,6 +55,7 @@ cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper
 
 ## Testing IGenotyper installation
 ```
+cd test
 IG phase subset_bam/reads.bam test # There will be an warning message about no reads for hap0.bw -- you can ignore this
 IG assembly test
 
@@ -164,3 +165,7 @@ alignments  alleles  assembly  logs  plots  preprocessed  report.html  tmp  vari
     3. `indel_assembly.bed`: Indels detected from the assembly
     4. `sv_assembly.bed`: SVs detected from the assembly
     5. `phased_blocks.txt`: Phased haplotype blocks
+
+
+# Todo
+1. Add IGL and IGK alleles to data/alleles.fasta

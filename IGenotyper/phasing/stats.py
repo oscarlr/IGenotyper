@@ -210,13 +210,15 @@ def plot_gene_cov(files,gene_cov,plot_tools_command_line):
     
 def phased_stats(files,stats,plot_tools_command_line,primary_alignment_bam):
     num_phased_snps,num_unphased_snps = phased_snps(files)
-    stats["num_phased_snps"] = num_phased_snps["igh"]
-    stats["num_unphased_snps"] = num_unphased_snps["igh"]
     phased_bases = phased_bases_per_chrom(files,primary_alignment_bam)
     if "igh" in phased_bases:
         stats["phased_bases"] = phased_bases["igh"]
+        stats["num_phased_snps"] = num_phased_snps["igh"]
+        stats["num_unphased_snps"] = num_unphased_snps["igh"]
     else:
         stats["phased_bases"] = 0
+        stats["num_phased_snps"] = None
+        stats["num_unphased_snps"] = None
     gene_cov = feat_coverage(files.gene_coords,primary_alignment_bam)
     gene_cov.sort(key = lambda x: x[-1])
     name = [i[3] for i in gene_cov]

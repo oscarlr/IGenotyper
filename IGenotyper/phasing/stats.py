@@ -53,21 +53,24 @@ def coverage_stats(files,bamfn):
     bedgraph = bam.genomecov(bg=True)
     targets = BedTool(files.target_regions)
     bedgraph = bedgraph.intersect(targets)
-    coverage = []    
+    coverage = []
+    is_igh_present = False # remove; Added so that IG can work for Rhesus
     for row in bedgraph:
         if row[0] == "igh":
+            is_igh_present = True
             chrom = row[0]
             start = int(row[1])
             end = int(row[2])
             cov = int(row[3])
             for _ in range(start,end):
                 coverage.append(cov)
-    igh_chrom,igh_start,igh_end = get_igh_region(files.target_regions)
-    igh = BedTool([(igh_chrom,igh_start,igh_end)])    
-    igh = igh.subtract(bedgraph)
-    for row in igh:
-        for _ in range(row.start,row.end):
-            coverage.append(cov)
+    if is_igh_present: # remove if statement only; Added so that IG can work for Rhesus
+        igh_chrom,igh_start,igh_end = get_igh_region(files.target_regions)
+        igh = BedTool([(igh_chrom,igh_start,igh_end)])    
+        igh = igh.subtract(bedgraph)
+        for row in igh:
+            for _ in range(row.start,row.end):
+                coverage.append(cov)
     mean = round(np.mean(coverage),2)                  
     std = round(np.std(coverage),2)
     cv = round(std/mean,2)

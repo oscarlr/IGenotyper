@@ -77,7 +77,7 @@ class Align(CommandLine):
         self.map_reads_with_blasr(self.files.assembly_fasta,prefix,self.files.ref,"--insertion 16 --deletion 20 --minMatch 15 --maxMatch 30")
         #self.map_reads_with_blasr(self.files.assembly_fasta,prefix,self.files.ref,"--insertion 0 --deletion 0 --minMatch 15 --maxMatch 30")
         self.sam_to_sorted_bam(prefix,self.files.assembly_to_ref)
-        self.map_igh_assembly()
+        #self.map_igh_assembly()
 
     def select_target_reads(self,bam_file,igh_bam_file):
         ## add aim regions

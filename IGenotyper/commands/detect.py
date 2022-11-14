@@ -18,12 +18,13 @@ from IGenotyper.detect.alleles import detect_alleles
 #from IGenotyper.commands.msa.msa_to_variants_without_hmm import path_to_variants
 
 def add_arguments(subparser):
+    subparser.add_argument('--rhesus',default=False, action='store_true')
     subparser.add_argument('--hom',metavar='HOM',help='Add homozygous reference genotype')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
 
-def run_detect(outdir,hom):
-    files = FileManager(outdir)
+def run_detect(outdir,hom,rhesus):
+    files = FileManager(outdir,rhesus=rhesus)
         
     with open(files.input_args,'r') as fh:
         phasing_args = json.load(fh)

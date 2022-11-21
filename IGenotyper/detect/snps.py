@@ -312,7 +312,7 @@ def detect_snps(files,sample):
         }
 
     header = vcf_header(sample)
-    for type_ in ["assembly","igh_assembly"]:
+    for type_ in ["assembly"]: # ["assembly","igh_assembly"]
         if type_ == "assembly":            
             vcf_fh = open(files.snps_assembly_vcf, 'w')
             vcf_fh.write("%s\n" % "\n".join(header))    

@@ -53,21 +53,24 @@ def coverage_stats(files,bamfn):
     bedgraph = bam.genomecov(bg=True)
     targets = BedTool(files.target_regions)
     bedgraph = bedgraph.intersect(targets)
-    coverage = []    
+    coverage = []
+    is_igh_present = False # remove; Added so that IG can work for Rhesus
     for row in bedgraph:
         if row[0] == "igh":
+            is_igh_present = True
             chrom = row[0]
             start = int(row[1])
             end = int(row[2])
             cov = int(row[3])
             for _ in range(start,end):
                 coverage.append(cov)
-    igh_chrom,igh_start,igh_end = get_igh_region(files.target_regions)
-    igh = BedTool([(igh_chrom,igh_start,igh_end)])    
-    igh = igh.subtract(bedgraph)
-    for row in igh:
-        for _ in range(row.start,row.end):
-            coverage.append(cov)
+    if is_igh_present: # remove if statement only; Added so that IG can work for Rhesus
+        igh_chrom,igh_start,igh_end = get_igh_region(files.target_regions)
+        igh = BedTool([(igh_chrom,igh_start,igh_end)])    
+        igh = igh.subtract(bedgraph)
+        for row in igh:
+            for _ in range(row.start,row.end):
+                coverage.append(cov)
     mean = round(np.mean(coverage),2)                  
     std = round(np.std(coverage),2)
     cv = round(std/mean,2)
@@ -207,13 +210,15 @@ def plot_gene_cov(files,gene_cov,plot_tools_command_line):
     
 def phased_stats(files,stats,plot_tools_command_line,primary_alignment_bam):
     num_phased_snps,num_unphased_snps = phased_snps(files)
-    stats["num_phased_snps"] = num_phased_snps["igh"]
-    stats["num_unphased_snps"] = num_unphased_snps["igh"]
     phased_bases = phased_bases_per_chrom(files,primary_alignment_bam)
     if "igh" in phased_bases:
         stats["phased_bases"] = phased_bases["igh"]
+        stats["num_phased_snps"] = num_phased_snps["igh"]
+        stats["num_unphased_snps"] = num_unphased_snps["igh"]
     else:
         stats["phased_bases"] = 0
+        stats["num_phased_snps"] = None
+        stats["num_unphased_snps"] = None
     gene_cov = feat_coverage(files.gene_coords,primary_alignment_bam)
     gene_cov.sort(key = lambda x: x[-1])
     name = [i[3] for i in gene_cov]

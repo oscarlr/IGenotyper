@@ -165,3 +165,7 @@ alignments  alleles  assembly  logs  plots  preprocessed  report.html  tmp  vari
     3. `indel_assembly.bed`: Indels detected from the assembly
     4. `sv_assembly.bed`: SVs detected from the assembly
     5. `phased_blocks.txt`: Phased haplotype blocks
+
+
+# Todo
+1. Add IGL and IGK alleles to data/alleles.fasta

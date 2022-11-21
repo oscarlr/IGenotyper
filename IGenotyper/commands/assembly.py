@@ -19,6 +19,7 @@ from IGenotyper.assembly.scripts import get_assembly_scripts
 #from IGenotyper.assembly.merge_assembly import merge_assembly
 
 def add_arguments(subparser):
+    subparser.add_argument('--rhesus',default=False, action='store_true')
     subparser.add_argument('--threads', metavar='THREADS', default=1, help='Number of threads')
     subparser.add_argument('--mem', metavar='MEM', default=8, help='Memory for cluster')
     subparser.add_argument('--cluster', default=False, action='store_true', help='Use cluster')
@@ -52,6 +53,7 @@ def combine_assembly_sequences(files,phased_blocks):
     #combine_sequence(files,phased_blocks,files.assembly_fastq,"fastq")
 
 def run_assembly(
+        rhesus,
         threads,
         mem,
         cluster,
@@ -59,7 +61,7 @@ def run_assembly(
         walltime,
         outdir
 ):
-    files = FileManager(outdir)
+    files = FileManager(outdir,rhesus=rhesus)
 
     with open(files.input_args,'r') as fh:
         phasing_args = json.load(fh)

@@ -36,6 +36,17 @@ git clone https://github.com/oscarlr/cluster
 cd cluster
 python setup.py install
 export SJOB_DEFALLOC=NONE
+
+# Install Kalign
+cd ..
+https://github.com/TimoLassmann/kalign/archive/refs/tags/v3.3.tar.gz
+cd kalign-3.3
+./autogen.sh
+./configure
+make
+make check
+make install
+
 ```
 
 ## Getting IGH specific reference IGH specific reference

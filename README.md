@@ -38,6 +38,7 @@ python setup.py install
 export SJOB_DEFALLOC=NONE
 
 # Install Kalign
+conda deactivate
 cd ..
 https://github.com/TimoLassmann/kalign/archive/refs/tags/v3.3.tar.gz
 cd kalign-3.3

@@ -40,10 +40,11 @@ export SJOB_DEFALLOC=NONE
 # Install Kalign
 conda deactivate
 cd ..
-https://github.com/TimoLassmann/kalign/archive/refs/tags/v3.3.tar.gz
+wget https://github.com/TimoLassmann/kalign/archive/refs/tags/v3.3.tar.gz
+tar -zxvf v3.3.tar.gz
 cd kalign-3.3
 ./autogen.sh
-./configure
+./configure --prefix=$HOME
 make
 make check
 make install

@@ -51,7 +51,7 @@ make install
 
 ```
 
-## Getting IGH specific reference IGH specific reference
+## Getting IGH specific reference
 
 ```
 wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta

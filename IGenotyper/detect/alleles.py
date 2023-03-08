@@ -2,7 +2,7 @@
 from Bio import SeqIO
 from collections import Counter
 
-from IGenotyper.common.helper import extract_sequence
+from IGenotyper.common.helper import extract_sequence,extract_sequence_as_records
 
 def get_matches(query_entries,database_entries):
     matches = {}
@@ -69,6 +69,29 @@ def write_genotypes(alleles,fn):
                 output = [chrom,start,end,gene_name,hap,cat,allele,allele_counts[allele_count]]
                 fh.write("%s\n" % "\t".join(map(str,output)))
 
+def extract_constant_sequence(phased_bam,bed,fasta):
+    records = extract_sequence_as_records(phased_bam,bed)
+    seqs = records_to_keys(records)
+    new_records = []
+    for feat in seqs:
+        for i in seqs[feat]:
+            feat_i_seqs = seqs[feat][i]
+            feat_i_seqs.sort(key = lambda x: x[0])
+            i_seq = []
+            i_chrom = feat_i_seqs[0][0]
+            i_start = feat_i_seqs[0][1]
+            i_end = feat_i_seqs[-1][2]
+            i_hap = feat_i_seqs[0][3]
+            for _ in feat_i_seqs:
+                i_seq.append(_[-1])
+            i_seq = "".join(i_seq)
+            name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (feat,i_hap,i_chrom,i_start,i_end,i)
+            if len(i_seq) == 0:
+                continue
+            record = SeqRecord(Seq(i_seq),id=name,name=name,description="")
+            new_records.append(record)
+    SeqIO.write(new_records,fasta,"fasta")
+
 def detect_alleles(files):
     extract_sequence(files.assembly_to_ref_phased,files.gene_coords,files.assembly_genes_fasta)
     extract_sequence(files.ccs_to_ref_phased,files.gene_coords,files.ccs_genes_fasta)
@@ -78,3 +101,5 @@ def detect_alleles(files):
     
     write_genotypes(assembly_alleles,files.assembly_genes_alleles)
     write_genotypes(ccs_alleles,files.ccs_genes_alleles)
+
+    extract_constant_sequence(files.assembly_to_ref_phased,files.constant_gene_coords,files.constant_assembly_genes_fasta)

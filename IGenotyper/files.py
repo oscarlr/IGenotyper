@@ -84,6 +84,7 @@ class FileManager():
         self.lpart1 = "%s/lpart1.bed" % data_directory
         self.rss = "%s/rss.bed" % data_directory
         self.gene_coords = "%s/gene_coords.bed" % data_directory
+        self.constant_gene_coords = "%s/constant_gene_coords.bed" % data_directory
         self.vdj_coords = "%s/vdj_coords.bed" % data_directory
         self.allele_db = "%s/alleles.fasta" % data_directory
 
@@ -142,3 +143,8 @@ class FileManager():
         self.assembly_genes_alleles = "%s/assembly_alleles.bed" % self.alleles
         self.ccs_genes_fasta = "%s/ccs_genes.fasta" % self.alleles
         self.ccs_genes_alleles = "%s/ccs_alleles.bed" % self.alleles
+
+        self.constant_assembly_genes_fasta = "%s/constant_assembly_genes.fasta" % self.alleles
+        self.constant_assembly_genes_alleles = "%s/constant_assembly_alleles.bed" % self.alleles
+        self.constant_ccs_genes_fasta = "%s/constant_ccs_genes.fasta" % self.alleles
+        self.constant_ccs_genes_alleles = "%s/constant_ccs_alleles.bed" % self.alleles

@@ -327,7 +327,7 @@ def extract_sequence_from(read,chrom,start,end):
         return ""
     return read.query_sequence[read_start:read_end].upper()
 
-def extract_sequence(phased_bam,bed,fasta):
+def extract_sequence_as_records(phased_bam,bed):
     records = []
     coords = load_bed_regions(bed,True)
     samfile = pysam.AlignmentFile(phased_bam)
@@ -347,6 +347,25 @@ def extract_sequence(phased_bam,bed,fasta):
             record = SeqRecord(Seq(seq),id=name,name=name,description="")
             records.append(record)
             i += 1
+    return records
+
+def records_to_keys(records):
+    seqs = {}
+    for record in records:
+        feat = record.name.split("_")[0].split("=")[1].split("_")[0]
+        hap = record.name.split("_")[1].split("=")[1]
+        i = record.name.split("_")[-1].split("=")[1]
+        chrom = record.name.split("_")[2].split(":")[0].split("-")[0].split("=")[1]
+        start,end = map(int,record.name.split("_")[2].split(":")[1].split("-"))
+        if feat not in seqs:
+            seqs[feat] = {}
+        if i not in seqs[feat]:
+            seqs[feat][i] = []
+        seqs[feat][i].append([chrom,start,end,hap,record.seq])
+    return seqs
+    
+def extract_sequence(phased_bam,bed,fasta):
+    records = extract_sequence_as_records(phased_bam,bed)
     SeqIO.write(records,fasta,"fasta") 
 
 def run_type(bam):

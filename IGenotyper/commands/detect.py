@@ -34,9 +34,8 @@ def run_detect(outdir,hom,rhesus):
     variants_command_line = VariantTools(files,cpu,sample)
     
     detect_snps(files,sample)
-    detect_msa_variants(files,sample,variants_command_line)
-
     detect_alleles(files)
+    detect_msa_variants(files,sample,variants_command_line)
 
 def main(args):
     run_detect(**vars(args))

@@ -2,7 +2,7 @@
 from Bio import SeqIO
 from collections import Counter
 
-from IGenotyper.common.helper import extract_sequence,extract_sequence_as_records
+from IGenotyper.common.helper import extract_sequence,extract_sequence_as_records,records_to_keys
 
 def get_matches(query_entries,database_entries):
     matches = {}

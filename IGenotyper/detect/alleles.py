@@ -71,11 +71,20 @@ def write_genotypes(alleles,fn):
 
 def extract_constant_sequence(phased_bam,bed,fasta):
     records = extract_sequence_as_records(phased_bam,bed)
-    seqs = records_to_keys(records)
+    seqs = records_to_keys(records)     
+    genes = {}
+    for f in seqs:
+        feat = f.split("-")[0]
+        if feat not in genes:
+            genes[feat] = {}            
+        for i in seqs[f]:
+            if i not in genes[feat]:
+                genes[feat][i] = []
+             genes[feat][i].append(seqs[f][i])
     new_records = []
-    for feat in seqs:
-        for i in seqs[feat]:
-            feat_i_seqs = seqs[feat][i]
+    for gene in genes:
+        for seq_name in genes[gene]:
+            feat_i_seqs = genes[gene][seq_name]
             feat_i_seqs.sort(key = lambda x: x[0])
             i_seq = []
             i_chrom = feat_i_seqs[0][0]
@@ -85,7 +94,7 @@ def extract_constant_sequence(phased_bam,bed,fasta):
             for _ in feat_i_seqs:
                 i_seq.append(_[-1])
             i_seq = "".join(i_seq)
-            name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (feat,i_hap,i_chrom,i_start,i_end,i)
+            name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (feat,i_hap,i_chrom,i_start,i_end,seq_name)
             if len(i_seq) == 0:
                 continue
             record = SeqRecord(Seq(i_seq),id=name,name=name,description="")

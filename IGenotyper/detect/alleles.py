@@ -80,7 +80,7 @@ def extract_constant_sequence(phased_bam,bed,fasta):
         for i in seqs[f]:
             if i not in genes[feat]:
                 genes[feat][i] = []
-             genes[feat][i].append(seqs[f][i])
+            genes[feat][i].append(seqs[f][i])
     new_records = []
     for gene in genes:
         for seq_name in genes[gene]:

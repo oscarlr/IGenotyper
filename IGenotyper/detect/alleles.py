@@ -1,5 +1,8 @@
 #!/bin/env python
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+
 from collections import Counter
 
 from IGenotyper.common.helper import extract_sequence,extract_sequence_as_records,records_to_keys

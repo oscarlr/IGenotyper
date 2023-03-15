@@ -95,7 +95,7 @@ def extract_constant_sequence(phased_bam,bed,fasta):
             for _ in feat_i_seqs:
                 i_seq.append(str(_[-1]))
             i_seq = "".join(i_seq)
-            name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (i_feat,i_hap,i_chrom,i_start,i_end,read)
+            name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (constant_gene,i_hap,i_chrom,i_start,i_end,read)
             if len(i_seq) == 0:
                 continue
             record = SeqRecord(Seq(i_seq),id=name,name=name,description="")

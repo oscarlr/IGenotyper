@@ -332,7 +332,7 @@ def extract_sequence_as_records(phased_bam,bed):
     coords = load_bed_regions(bed,True)
     samfile = pysam.AlignmentFile(phased_bam)
     for chrom,start,end,feat in coords:
-        i = 0
+        #i = 0
         for read in samfile.fetch(chrom,start,end):
             if skip_read(read):
                 continue
@@ -340,13 +340,14 @@ def extract_sequence_as_records(phased_bam,bed):
                 hap = read.get_tag("RG",True)[0]
             else:
                 hap = get_haplotype(read.query_name)
+            i = read.query_name.replace("_",".")
             name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (feat,hap,chrom,start,end,i)
             seq = extract_sequence_from(read,chrom,start,end)
             if len(seq) == 0:
                 continue
             record = SeqRecord(Seq(seq),id=name,name=name,description="")
             records.append(record)
-            i += 1
+            #i += 1
     return records
 
 def records_to_keys(records):

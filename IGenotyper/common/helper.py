@@ -340,7 +340,7 @@ def extract_sequence_as_records(phased_bam,bed):
                 hap = read.get_tag("RG",True)[0]
             else:
                 hap = get_haplotype(read.query_name)
-            i = read.query_name.replace("_",".")
+            i = read.query_name.replace("_",".").replace("=",".")
             name = "feat=%s_hap=%s_pos=%s:%s-%s_j=%s_i=%s" % (feat,hap,chrom,start,end,j,i)
             seq = extract_sequence_from(read,chrom,start,end)
             if len(seq) == 0:

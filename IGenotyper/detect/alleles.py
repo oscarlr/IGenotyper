@@ -93,7 +93,7 @@ def extract_constant_sequence(phased_bam,bed,fasta):
             i_end = feat_i_seqs[-1][2]
             i_hap = feat_i_seqs[0][3]
             for _ in feat_i_seqs:
-                i_seq.append(_[-1])
+                i_seq.append(str(_[-1]))
             i_seq = "".join(i_seq)
             name = "feat=%s_hap=%s_pos=%s:%s-%s_i=%s" % (feat,i_hap,i_chrom,i_start,i_end,seq_name)
             if len(i_seq) == 0:

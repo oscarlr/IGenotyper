@@ -34,5 +34,5 @@ class ReadManip(CommandLine):
                 self.files.ccs_fastq]
         command = ("bam2fasta "
                    "-o %s %s\n"
-                   "zcat %s.fasta.gz | sed 's/ccs/0_8/g' > %s\n" % tuple(args))
+                   "zcat %s.fasta.gz | sed 's/ccs/0_8/g' | sed 's/\/fwd//g' | sed 's/\/rev//g' > %s\n" % tuple(args))
         self.run_command(command,self.files.ccs_fastq)

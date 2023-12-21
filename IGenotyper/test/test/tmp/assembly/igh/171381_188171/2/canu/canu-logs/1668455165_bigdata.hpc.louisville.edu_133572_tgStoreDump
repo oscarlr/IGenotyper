@@ -1,0 +1,11 @@
+Canu v2.0 (+0 commits) r0 .
+
+Current Working Directory:
+/home/u0jana01/IGenotyper/test/test/tmp/assembly/igh/171381_188171/2/canu
+
+Command:
+/home/u0jana01/anaconda3/envs/IGv2/bin/tgStoreDump \
+  -S ./canu.seqStore \
+  -T ./unitigging/canu.ctgStore 2 \
+  -o ./canu.contigs \
+  -layout

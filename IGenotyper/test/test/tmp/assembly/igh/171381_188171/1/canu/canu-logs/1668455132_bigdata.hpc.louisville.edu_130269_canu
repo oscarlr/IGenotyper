@@ -1,0 +1,17 @@
+
+###
+###  Reading options from '/home/u0jana01/anaconda3/envs/IGv2/bin/canu.defaults'
+###
+
+# Add site specific options (for setting up Grid or limiting memory/threads) here.
+
+###
+###  Reading options from the command line.
+###
+
+corOutCoverage=200
+minThreads=1
+genomeSize=18790
+useGrid=0
+minInputCoverage=0
+stopOnLowCoverage=0

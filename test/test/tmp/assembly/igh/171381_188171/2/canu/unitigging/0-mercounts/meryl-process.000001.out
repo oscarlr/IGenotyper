@@ -1,0 +1,85 @@
+
+Found perl:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/perl
+   This is perl 5, version 26, subversion 2 (v5.26.2) built for x86_64-linux-thread-multi
+
+Found java:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/java
+   openjdk version "1.8.0_152-release"
+
+Found canu:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/canu
+   Canu 2.0
+
+Running job 1 based on command line options.
+Enabling 4 threads.
+kmerCountFileWriter()-- Creating 'canu.ms22.WORKING' for 22-mers, with prefixSize 12 suffixSize 32 numFiles 64
+Bye.
+Enabling 1 threads.
+Enabling 4 threads.
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+For fraction-distinct 0.999900, found threshold 20
+Bye.
+Enabling 24 threads.

@@ -1,0 +1,23 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##fileDate=20221114
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##contig=<ID=igh>
+##commandline="(whatshap 1.7.dev54+g0cb3793) genotype --sample sample --ignore-read-groups --reference /home/u0jana01/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/reference.fasta -o test/variants/snvs_from_ccs.vcf test/tmp/snvs_candidates.vcf test/preprocessed/ccs_to_ref.sorted.bam"
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Phred-scaled genotype quality computed by WhatsHap genotyping algorithm">
+##FORMAT=<ID=GL,Number=G,Type=Float,Description="Log10-scaled likelihoods for genotypes: 0/0, 0/1, 1/1, computed by WhatsHap genotyping algorithm">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample
+igh	171381	.	A	G	.	PASS	.	GT:GL:GQ	1/0:-21.7738,0,-21.7738:215
+igh	172421	.	T	C	.	PASS	.	GT:GL:GQ	1/0:-31.0959,0,-29.5049:295
+igh	172483	.	G	A	.	PASS	.	GT:GL:GQ	1/0:-31.0959,0,-29.5049:295
+igh	173353	.	C	T	.	PASS	.	GT:GL:GQ	1/0:-32.2478,0,-38.4295:322
+igh	177538	.	C	T	.	PASS	.	GT:GL:GQ	1/0:-30.2579,0,-42.4388:303
+igh	179099	.	A	G	.	PASS	.	GT:GL:GQ	1/0:-17.6453,0,-42.007:176
+igh	182604	.	C	T	.	PASS	.	GT:GL:GQ	1/0:-27.4623,0,-41.5993:275
+igh	186821	.	T	C	.	PASS	.	GT:GL:GQ	1/0:-30.0845,0,-19.4947:195
+igh	188029	.	T	C	.	PASS	.	GT:GL:GQ	1/0:-28.933,-1.16754e-11,-10.5705:106
+igh	188171	.	A	C	.	PASS	.	GT:GL:GQ	1/0:-28.933,-1.16754e-11,-10.5705:106
+igh	190081	.	A	G	.	PASS	.	GT:GL:GQ	1/1:-27.5438,-5.04081,-3.95348e-06:50
+igh	190103	.	G	T	.	PASS	.	GT:GL:GQ	1/1:-27.5438,-5.04081,-3.95348e-06:50
+igh	190603	.	T	C	.	PASS	.	GT:GL:GQ	1/1:-22.9608,-1.75884,-0.00763411:18
+igh	190646	.	C	T	.	PASS	.	GT:GL:GQ	1/1:-22.9608,-1.75884,-0.00763411:18

@@ -1,0 +1,14 @@
+Canu v2.0 (+0 commits) r0 .
+
+Current Working Directory:
+/home/u0jana01/IGenotyper/test/test/tmp/assembly/igh/171381_188171/1/canu/unitigging/3-overlapErrorAdjustment
+
+Command:
+/home/u0jana01/anaconda3/envs/IGv2/bin/findErrors \
+  -S ../../canu.seqStore \
+  -O ../canu.ovlStore \
+  -R 1 34 \
+  -e 0.01 \
+  -l 500 \
+  -o ./00001.red.WORKING \
+  -t 4

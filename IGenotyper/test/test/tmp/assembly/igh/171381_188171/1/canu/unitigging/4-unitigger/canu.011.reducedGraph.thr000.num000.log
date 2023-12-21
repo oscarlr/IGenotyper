@@ -1,0 +1,64 @@
+IGNORE read 3 orphan 
+IGNORE read 4 orphan 
+IGNORE read 5 orphan 
+IGNORE read 6 orphan 
+IGNORE read 11 orphan 
+IGNORE read 13 orphan 
+IGNORE read 21 orphan 
+IGNORE read 22 orphan 
+IGNORE read 24 orphan 
+IGNORE read 25 orphan 
+IGNORE read 26 orphan 
+IGNORE read 28 orphan 
+IGNORE read 29 orphan 
+IGNORE read 30 orphan 
+IGNORE read 31 orphan 
+
+ERROR RATES
+-----------
+
+                                            --------threshold-------
+27                       fraction error     fraction         percent
+samples                          (1e-5)        error           error
+                 ----------------------       ------        --------
+command line                             ->    30.00         0.0300%
+mean + std.dev     0.00 +-   0 *   0.00  ->     0.00         0.0000%
+median + mad       0.00 +-   0 *   0.00  ->     0.00         0.0000%
+90th percentile                          ->     1.00         0.0010%  (enabled)
+
+
+BEST EDGE FILTERING
+-------------------
+
+Reads with both best edges below threshold:        15
+Reads with one  best edge  above threshold:         0
+Reads with both best edges above threshold:         0
+
+
+INITIAL EDGES
+-------- ----------------------------------------
+       1 reads are contained
+      18 reads have no best edges (singleton)
+       4 reads have only one best edge (spur) 
+                2 are mutual best
+      11 reads have two best edges 
+                0 have one mutual best edge
+               11 have two mutual best edges
+
+
+EDGE FILTERING
+-------- ------------------------------------------
+      15 reads are ignored
+       0 reads have a gap in overlap coverage
+       3 reads have lopsided best edges
+
+FINAL EDGES
+-------- ----------------------------------------
+       1 reads are contained
+      18 reads have no best edges (singleton)
+       4 reads have only one best edge (spur) 
+                2 are mutual best
+      11 reads have two best edges 
+                0 have one mutual best edge
+               11 have two mutual best edges
+

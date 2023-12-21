@@ -1,0 +1,49 @@
+
+ERROR RATES
+-----------
+
+                                            --------threshold-------
+46                       fraction error     fraction         percent
+samples                          (1e-5)        error           error
+                 ----------------------       ------        --------
+command line                             ->    30.00         0.0300%
+mean + std.dev     1.04 +-   0 *   4.95  ->     1.04         0.0010%
+median + mad       0.00 +-   0 *   0.00  ->     0.00         0.0000%
+90th percentile                          ->     1.00         0.0010%  (enabled)
+
+
+BEST EDGE FILTERING
+-------------------
+
+Reads with both best edges below threshold:        18
+Reads with one  best edge  above threshold:         2
+Reads with both best edges above threshold:         0
+
+
+INITIAL EDGES
+-------- ----------------------------------------
+      14 reads are contained
+       0 reads have no best edges (singleton)
+       9 reads have only one best edge (spur) 
+                3 are mutual best
+      11 reads have two best edges 
+                1 have one mutual best edge
+               10 have two mutual best edges
+
+
+EDGE FILTERING
+-------- ------------------------------------------
+       0 reads are ignored
+       0 reads have a gap in overlap coverage
+       3 reads have lopsided best edges
+
+FINAL EDGES
+-------- ----------------------------------------
+      14 reads are contained
+       3 reads have no best edges (singleton)
+       6 reads have only one best edge (spur) 
+                2 are mutual best
+      11 reads have two best edges 
+                0 have one mutual best edge
+               11 have two mutual best edges
+

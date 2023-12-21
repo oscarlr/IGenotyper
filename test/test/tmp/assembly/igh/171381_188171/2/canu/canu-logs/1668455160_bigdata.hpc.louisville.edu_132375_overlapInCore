@@ -1,0 +1,19 @@
+Canu v2.0 (+0 commits) r0 .
+
+Current Working Directory:
+/home/u0jana01/IGenotyper/test/test/tmp/assembly/igh/171381_188171/2/canu/unitigging/1-overlapper
+
+Command:
+/home/u0jana01/anaconda3/envs/IGv2/bin/overlapInCore \
+  -t 8 \
+  -k 22 \
+  -k ../0-mercounts/canu.ms22.dump \
+  --hashbits 22 \
+  --hashload 0.8 \
+  --maxerate 0.01 \
+  --minlength 500 \
+  -h 1-30 \
+  -r 1-30 \
+  --hashdatalen 143611 \
+  -o ./001/000001.ovb.WORKING \
+  -s ./001/000001.stats ../../canu.seqStore

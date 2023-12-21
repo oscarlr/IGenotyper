@@ -1,0 +1,64 @@
+
+Found perl:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/perl
+   This is perl 5, version 26, subversion 2 (v5.26.2) built for x86_64-linux-thread-multi
+
+Found java:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/java
+   openjdk version "1.8.0_152-release"
+
+Found canu:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/canu
+   Canu 2.0
+
+Running job 1 based on command line options.
+sqStore_loadMetadata()-- Using 'corrected-compressed-trimmed' 0x14 reads.
+Enabling 4 threads.
+
+Counting 164 (estimated) thousand canonical 22-mers from 1 input file:
+    canu-seqStore: ../../canu.seqStore
+
+
+SIMPLE MODE
+-----------
+
+  Disabled for mers larger than 20.
+
+
+COMPLEX MODE
+------------
+
+prefix     # of   struct   kmers/    segs/      min     data    total
+  bits   prefix   memory   prefix   prefix   memory   memory   memory
+------  -------  -------  -------  -------  -------  -------  -------
+     1     2  P   336  B    82 kM     7  S   128 kB   896 kB   896 kB
+     2     4  P   576  B    41 kM     4  S   256 kB  1024 kB  1024 kB
+     3     8  P  1024  B    20 kM     2  S   512 kB  1024 kB  1025 kB
+     4    16  P  1920  B    10 kM     1  S  1024 kB  1024 kB  1025 kB
+     5    32  P  3840  B  5269  M     1  S  2048 kB  2048 kB  2051 kB
+     6    64  P  7680  B  2635  M     1  S  4096 kB  4096 kB  4103 kB
+     7   128  P    15 kB  1318  M     1  S  8192 kB  8192 kB  8207 kB
+     8   256  P    30 kB   659  M     1  S    16 MB    16 MB    16 MB
+     9   512  P    60 kB   330  M     1  S    32 MB    32 MB    32 MB
+    10  1024  P   120 kB   165  M     1  S    64 MB    64 MB    64 MB  Best Value!
+    11  2048  P   240 kB    83  M     1  S   128 MB   128 MB   128 MB
+    12  4096  P   480 kB    42  M     1  S   256 MB   256 MB   256 MB
+    13  8192  P   960 kB    21  M     1  S   512 MB   512 MB   512 MB
+    14    16 kP  1920 kB    11  M     1  S  1024 MB  1024 MB  1025 MB
+    15    32 kP  3840 kB     6  M     1  S  2048 MB  2048 MB  2051 MB
+
+
+FINAL CONFIGURATION
+-------------------
+
+Configured complex mode for 0.063 GB memory per batch, and up to 1 batch.
+
+kmerCountFileWriter()-- Creating './canu.01.meryl.WORKING' for 22-mers, with prefixSize 10 suffixSize 34 numFiles 64
+Loading kmers from '../../canu.seqStore' into buckets.
+Used 0.278 GB out of 2.000 GB to store         4225 kmers.
+
+Writing results to './canu.01.meryl.WORKING', using 4 threads.
+finishIteration()--
+
+Finished counting.
+Bye.

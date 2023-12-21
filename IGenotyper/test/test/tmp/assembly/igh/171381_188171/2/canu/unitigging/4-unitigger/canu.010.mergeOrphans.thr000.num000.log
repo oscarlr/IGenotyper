@@ -1,0 +1,17 @@
+
+== Finding Potential Orphans ==
+
+tig        1 length      9979 nReads       7/     18 -   0 regions covering   0.00 uncovered     0/     0/    0 edges 0 0 -- potential orphan
+
+== Found 0 Potential Orphans ==
+
+
+== Finding Read Placements for Potential Orphans ==
+
+
+== Found 0 placements for 0 reads. ==
+           11 reads not placed: not in a tig
+           18 reads not placed: contained
+           29 reads not placed: not in an orhpan
+
+

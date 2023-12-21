@@ -1,0 +1,36 @@
+lenUnassembled ng10        7560 bp   lg10       1   sum       7560 bp
+lenUnassembled ng20        7560 bp   lg20       1   sum       7560 bp
+lenUnassembled ng30        7560 bp   lg30       1   sum       7560 bp
+lenUnassembled ng40        7560 bp   lg40       1   sum       7560 bp
+lenUnassembled ng50        6746 bp   lg50       2   sum      14306 bp
+lenUnassembled ng60        6746 bp   lg60       2   sum      14306 bp
+lenUnassembled ng70        6746 bp   lg70       2   sum      14306 bp
+lenUnassembled ng80        6696 bp   lg80       3   sum      21002 bp
+lenUnassembled ng90        6696 bp   lg90       3   sum      21002 bp
+lenUnassembled ng100       6696 bp   lg100      3   sum      21002 bp
+lenUnassembled ng110       6696 bp   lg110      3   sum      21002 bp
+lenUnassembled ng120       6066 bp   lg120      4   sum      27068 bp
+lenUnassembled ng130       6066 bp   lg130      4   sum      27068 bp
+lenUnassembled ng140       6066 bp   lg140      4   sum      27068 bp
+lenUnassembled ng150       5944 bp   lg150      5   sum      33012 bp
+lenUnassembled ng160       5944 bp   lg160      5   sum      33012 bp
+lenUnassembled ng170       5944 bp   lg170      5   sum      33012 bp
+lenUnassembled ng180       5617 bp   lg180      6   sum      38629 bp
+lenUnassembled ng190       5617 bp   lg190      6   sum      38629 bp
+lenUnassembled ng200       5617 bp   lg200      6   sum      38629 bp
+lenUnassembled sum      38629 (genomeSize 18790)
+lenUnassembled num          6
+lenUnassembled ave       6438
+lenContig ng10       19971 bp   lg10       1   sum      19971 bp
+lenContig ng20       19971 bp   lg20       1   sum      19971 bp
+lenContig ng30       19971 bp   lg30       1   sum      19971 bp
+lenContig ng40       19971 bp   lg40       1   sum      19971 bp
+lenContig ng50       19971 bp   lg50       1   sum      19971 bp
+lenContig ng60       19971 bp   lg60       1   sum      19971 bp
+lenContig ng70       19971 bp   lg70       1   sum      19971 bp
+lenContig ng80       19971 bp   lg80       1   sum      19971 bp
+lenContig ng90       19971 bp   lg90       1   sum      19971 bp
+lenContig ng100      19971 bp   lg100      1   sum      19971 bp
+lenContig sum      19971 (genomeSize 18790)
+lenContig num          1
+lenContig ave      19971

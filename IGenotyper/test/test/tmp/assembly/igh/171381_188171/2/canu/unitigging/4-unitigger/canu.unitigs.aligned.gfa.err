@@ -1,0 +1,11 @@
+-- Reading GFA './canu.unitigs.gfa'.
+gfa:  Loaded 1 sequences and 0 links.
+-- Loading sequences from tigStore '../canu.utgStore' version 1.
+-- Loading sequences from tigStore '../canu.utgStore' version 2.
+-- Resetting sequence lengths.
+-- Aligning 0 links using 4 threads and 5.00 error rate.
+-- Writing GFA './canu.unitigs.aligned.gfa'.
+-- Cleaning up.
+-- Aligned      0 ciruclar tigs, failed      0
+-- Aligned      0   linear tigs, failed      0
+Bye.

@@ -1,0 +1,26 @@
+Number of 22-mers that are:
+  unique                      0  (exactly one instance of the kmer is in the input)
+  distinct                16175  (non-redundant kmer sequences in the input)
+  present                140752  (...)
+  missing        17592186028241  (non-redundant kmer sequences not in the input)
+
+             number of   cumulative   cumulative     presence
+              distinct     fraction     fraction   in dataset
+frequency        kmers     distinct        total       (1e-6)
+--------- ------------ ------------ ------------ ------------
+        2          457       0.0283       0.0065    14.209390
+        3          826       0.0793       0.0241    21.314084
+        4          129       0.0873       0.0278    28.418779
+        5         1224       0.1630       0.0712    35.523474
+        6         1746       0.2709       0.1457    42.628169
+        7         1992       0.3941       0.2447    49.732863
+        8          486       0.4241       0.2724    56.837558
+        9         3485       0.6396       0.4952    63.942253
+       10         1294       0.7196       0.5871    71.046948
+       11          467       0.7484       0.6236    78.151643
+       12         1278       0.8274       0.7326    85.256337
+       13         1862       0.9426       0.9046    92.361032
+       14          707       0.9863       0.9749    99.465727
+       15          214       0.9995       0.9977   106.570422
+       20            6       0.9999       0.9986   142.093896
+      102            2       1.0000       1.0000   724.678868

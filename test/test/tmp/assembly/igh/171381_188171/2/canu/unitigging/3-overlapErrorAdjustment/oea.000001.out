@@ -1,0 +1,53 @@
+
+Found perl:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/perl
+   This is perl 5, version 26, subversion 2 (v5.26.2) built for x86_64-linux-thread-multi
+
+Found java:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/java
+   openjdk version "1.8.0_152-release"
+
+Found canu:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/canu
+   Canu 2.0
+
+Running job 1 based on command line options.
+Correcting HIFI reads
+Initializing.
+Opening seqStore '../../canu.seqStore'.
+sqStore_loadMetadata()-- Using 'corrected-compressed-trimmed' 0x14 reads.
+Correcting reads 1 to 30.
+Reading 210 corrections from './red.red'.
+Correcting 143649 bases with 131 indel adjustments.
+--Allocate 0 + 0 + 0 MB for bases, adjusts and reads.
+Corrected 143556 bases with 49 substitutions, 93 deletions and 38 insertions.
+Loading overlaps.
+Read_Olaps()--  Loading 430 overlaps from '../canu.ovlStore' for reads 1 to 30
+--Allocate 0 MB for overlaps.
+Read_Olaps()--  Loaded 430 overlaps -- 430 normal and 0 innie.
+Sorting overlaps.
+Recomputing overlaps.
+--Allocate 8 MB for fseq and rseq.
+--Allocate 32 MB for fadj and radj.
+--Allocate 16 MB for pedWorkArea_t.
+-- Allocate 0 MB for Edit_Array pointers.
+Recomputing overlaps -         1 -         1 -        30
+--Allocate 16 MB for edit array work space 0 (positions 0-4092)
+
+--  Release bases, adjusts and reads.
+Olaps Fwd 430
+Olaps Rev 0
+Total:  430
+Failed: 0 (both)
+Failed: 0 (either)
+Failed: 0 (match to end)
+Failed: 0 (negative length)
+Changed 430 overlaps.
+Better: 428 overlaps.
+Worse:  0 overlaps.
+Same:   2 overlaps.
+Sorting overlaps.
+Saving corrected error rates to file ./00001.oea.WORKING
+--Allocate 0 MB for output error rates.
+
+Bye.

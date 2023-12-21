@@ -1,0 +1,45 @@
+lenUnassembled ng10        7221 bp   lg10       1   sum       7221 bp
+lenUnassembled ng20        7221 bp   lg20       1   sum       7221 bp
+lenUnassembled ng30        7221 bp   lg30       1   sum       7221 bp
+lenUnassembled ng40        6269 bp   lg40       2   sum      13490 bp
+lenUnassembled ng50        6269 bp   lg50       2   sum      13490 bp
+lenUnassembled ng60        6269 bp   lg60       2   sum      13490 bp
+lenUnassembled ng70        6269 bp   lg70       2   sum      13490 bp
+lenUnassembled ng80        6063 bp   lg80       3   sum      19553 bp
+lenUnassembled ng90        6063 bp   lg90       3   sum      19553 bp
+lenUnassembled ng100       6063 bp   lg100      3   sum      19553 bp
+lenUnassembled ng110       6061 bp   lg110      4   sum      25614 bp
+lenUnassembled ng120       6061 bp   lg120      4   sum      25614 bp
+lenUnassembled ng130       6061 bp   lg130      4   sum      25614 bp
+lenUnassembled ng140       5954 bp   lg140      5   sum      31568 bp
+lenUnassembled ng150       5954 bp   lg150      5   sum      31568 bp
+lenUnassembled ng160       5954 bp   lg160      5   sum      31568 bp
+lenUnassembled ng170       5941 bp   lg170      6   sum      37509 bp
+lenUnassembled ng180       5941 bp   lg180      6   sum      37509 bp
+lenUnassembled ng190       5941 bp   lg190      6   sum      37509 bp
+lenUnassembled ng200       5006 bp   lg200      7   sum      42515 bp
+lenUnassembled ng210       5006 bp   lg210      7   sum      42515 bp
+lenUnassembled ng220       5006 bp   lg220      7   sum      42515 bp
+lenUnassembled ng230       4955 bp   lg230      8   sum      47470 bp
+lenUnassembled ng240       4955 bp   lg240      8   sum      47470 bp
+lenUnassembled ng250       4955 bp   lg250      8   sum      47470 bp
+lenUnassembled ng260       4850 bp   lg260      9   sum      52320 bp
+lenUnassembled ng270       4850 bp   lg270      9   sum      52320 bp
+lenUnassembled ng280       4651 bp   lg280     10   sum      56971 bp
+lenUnassembled ng290       4651 bp   lg290     10   sum      56971 bp
+lenUnassembled ng300       4651 bp   lg300     10   sum      56971 bp
+lenUnassembled ng310       3940 bp   lg310     11   sum      60911 bp
+lenUnassembled ng320       3940 bp   lg320     11   sum      60911 bp
+lenUnassembled ng330       3573 bp   lg330     12   sum      64484 bp
+lenUnassembled ng340       3573 bp   lg340     12   sum      64484 bp
+lenUnassembled sum      64484 (genomeSize 18790)
+lenUnassembled num         12
+lenUnassembled ave       5373
+lenContig ng10        9979 bp   lg10       1   sum       9979 bp
+lenContig ng20        9979 bp   lg20       1   sum       9979 bp
+lenContig ng30        9979 bp   lg30       1   sum       9979 bp
+lenContig ng40        9979 bp   lg40       1   sum       9979 bp
+lenContig ng50        9979 bp   lg50       1   sum       9979 bp
+lenContig sum       9979 (genomeSize 18790)
+lenContig num          1
+lenContig ave       9979

@@ -1,0 +1,6 @@
+{
+    "bam": "subset_bam/reads.bam", 
+    "input_vcf": null, 
+    "sample": "sample", 
+    "tmp": "test/tmp"
+}

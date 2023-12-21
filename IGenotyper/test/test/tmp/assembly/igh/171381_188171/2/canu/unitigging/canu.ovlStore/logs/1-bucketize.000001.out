@@ -1,0 +1,28 @@
+
+Found perl:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/perl
+   This is perl 5, version 26, subversion 2 (v5.26.2) built for x86_64-linux-thread-multi
+
+Found java:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/java
+   openjdk version "1.8.0_152-release"
+
+Found canu:
+   /home/u0jana01/anaconda3/envs/IGv2/bin/canu
+   Canu 2.0
+
+Running job 1 based on command line options.
+
+Attempting to increase maximum allowed processes and open files.
+  Changed max processes per user from 4096 to 379527 (max 379527).
+  Changed max open files from 1024 to 4096 (max 4096).
+
+sqStore_loadMetadata()-- Using 'corrected-compressed-trimmed' 0x14 reads.
+
+Opened '../canu.seqStore' with 30 reads.
+
+Constructing slice 1 for store './canu.ovlStore.BUILDING'.
+ - Filtering overlaps over 1.0000 fraction error.
+
+Bucketizing input    1 out of    1 - '1-overlapper/001/000001.ovb'
+Success!

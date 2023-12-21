@@ -1,0 +1,8 @@
+# Contigs flagged as unassembled.
+#
+# fewReadsNumber   2 (singletons always removed and not logged)
+# tooShortLength   0
+# spanFraction     1.000000
+# lowcovFraction   0.500000
+# lowcovDepth      3
+#

@@ -1,0 +1,10 @@
+-- Reading BED './canu.unitigs.bed'.
+bed:  Loaded 1 records.
+-- Loading sequences from tigStore '../canu.utgStore' version 2.
+-- Loading sequences from tigStore '../canu.ctgStore' version 1.
+-- Loading sequences from tigStore '../canu.ctgStore' version 2.
+-- Aligning 1 records using 4 threads.
+-- Writing BED './canu.unitigs.aligned.bed'.
+-- Cleaning up.
+-- Aligned      1 unitigs to contigs, failed      0
+Bye.

@@ -1,0 +1,15 @@
+Canu v2.0 (+0 commits) r0 .
+
+Current Working Directory:
+/home/u0jana01/IGenotyper/test/test/tmp/assembly/chr2/178741311_178742311/0/canu
+
+Command:
+/home/u0jana01/anaconda3/envs/IGv2/bin/sqStoreCreate \
+  -o ./canu.seqStore.BUILDING \
+  -minlength 1000 \
+  -genomesize 3000 \
+  -coverage 50 \
+  -bias 0 \
+  -raw \
+  -trimmed \
+  -pacbio-hifi reads /home/u0jana01/IGenotyper/test/test/tmp/assembly/chr2/178741311_178742311/0/reads.fasta

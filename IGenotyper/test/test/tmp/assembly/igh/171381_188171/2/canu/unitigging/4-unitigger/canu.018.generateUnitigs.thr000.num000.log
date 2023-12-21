@@ -1,0 +1,35 @@
+
+----------------------------------------
+Adding sentinel breaks at the ends of contigs.
+
+----------------------------------------
+Adding breaks at confused reads.
+
+----------------------------------------
+Finding contig-end to contig-middle intersections.
+
+createUnitigs()-- tig 1 len 9979 first read 1 with 1 placements - last read 16 with 1 placements
+createUnitigs()-- read      1 place   0 edgeTo tig     1 reads #    1         3-       13 verified       208-     4295 position         0-     4295 covered     209-   4289 SELF EXPECTED_5'
+createUnitigs()-- read     16 place   0 edgeTo tig     1 reads #    3         5-       21 verified      4758-     9977 position      4758-     9978 covered       0-   5215 SELF
+
+Histogram of number of placements per contig end:
+numPlacements  numEnds
+            0        2
+
+----------------------------------------
+Found 2 breakpoints (including duplicates).
+      2 from sentinels.
+      0 from confused edges.
+      0 from intersections.
+
+Splitting contigs into unitigs.
+
+
+
+splitTig()-- processing tig 1
+createUnitigs()-- contig 1 copied into unitig 1.
+createUnitigs()-- piece   0 -> tig 1 from contig 1 0-9979
+unitig 1 with 18 reads, 7 backbone and 11 unplaced.
+
+----------------------------------------
+Generating graph

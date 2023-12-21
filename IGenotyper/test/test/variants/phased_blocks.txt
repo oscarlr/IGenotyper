@@ -1,0 +1,2 @@
+#sample	chromosome	phase_set	from	to	variants
+sample	igh	171381	171381	188171	10

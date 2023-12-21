@@ -1,3 +1,0 @@
-ID         technology  name
----- ----------------  ------------------------------
-1          PacBioHiFi  reads

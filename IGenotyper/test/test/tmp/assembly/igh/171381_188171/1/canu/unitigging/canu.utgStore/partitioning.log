@@ -1,6 +1,0 @@
--- Opening seqStore '../canu.seqStore'.
-sqStore_loadMetadata()-- Using 'corrected-compressed-trimmed' 0x14 reads.
--- Using corrected-trimmed reads.
--- Opening tigStore './canu.utgStore' version 1.
-
-Bye.

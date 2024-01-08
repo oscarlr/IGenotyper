@@ -12,8 +12,8 @@ size=$8
 subreads_to_ref=$9
 python_scripts=${10}
 subreads=${11}
-pacbio_machine=${12}
-
+#pacbio_machine=${12}	ud_edited
+pacbio_machine="SEQUELII"
 # Get CCS reads
 if [ ! -s ${output}/reads.fasta ]
 then

@@ -26,8 +26,9 @@ def create_assemble_script(files,cpu,dir,chrom,start,end,hap):
         "subreads_to_ref": files.subreads_to_ref_phased,
         "python_scripts": files.scripts,
         "ref": files.ref,
-        "pacbio_machine": run_type(files.input_bam)
+        "pacbio_machine": "SEQUELII"
     }
+    # ud edited "pacbio_machine": run_type(files.input_bam) in params dict
     write_to_bashfile(files.assembly_script,bashfile,params)
     return bashfile
 

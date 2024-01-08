@@ -60,8 +60,8 @@ class FileManager():
         create_folders(folders)
 
     def file_structure(self):
-        pacbio_machine = run_type(self.input_bam)
-    
+        #pacbio_machine = run_type(self.input_bam)
+        pacbio_machine = "SEQUELII" 
         if pacbio_machine != "SEQUELII":
             self.ccs_bam = "%s/ccs.bam" % self.preprocess
             self.ccs_pbi = "%s/ccs.bam.pbi" % self.preprocess

@@ -36,6 +36,8 @@ def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None):
         dir = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
         if run_type(files.input_bam) == "SEQUELII":
             contig = "%s/canu/canu.contigs.%s" % (dir,type_)
+        if run_type(files.input_bam) == "REVIO":
+            contig = "%s/canu/canu.contigs.%s" % (dir,type_)
         else:
             contig = "%s/contigs.%s" % (dir,type_)
         if os.path.isfile(contig):
@@ -76,7 +78,8 @@ def run_assembly(
     phased_blocks = get_phased_blocks(files,files.phased_blocks)    
     
     #if not non_emptyfile(files.assembly_fastq): # CHANGED to GET CONSTANT
-    pacbio_machine = run_type(files.input_bam)
+    #pacbio_machine = run_type(files.input_bam)
+    pacbio_machine = "SEQUELII"
     assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
     assembly_command_line.run_assembly_scripts(assembly_scripts)
     

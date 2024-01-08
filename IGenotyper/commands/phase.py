@@ -92,10 +92,6 @@ def run_phasing(
     if not non_emptyfile(files.ccs_to_ref_phased):
         phase_ccs(files,sample)
 
-    if pacbio_machine != "SEQUELII":
-        print ('wrong happening:', pacbio_machine)
-        align_command_line.map_subreads()        
-        phase_subreads(files,sample)
 
     # if (not non_emptyfile(files.subreads_to_ref_phased)) and \
     #    (not non_emptyfile(files.ccs_to_ref_phased)):

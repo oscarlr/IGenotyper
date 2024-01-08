@@ -45,3 +45,4 @@ then
     	${data_setting} ${output}/reads.fasta
 fi
 
+echo "" > ${output}/done

@@ -77,9 +77,6 @@ def run_phasing(
     #pacbio_machine = run_type(bam)
     pacbio_machine = "SEQUELII"
     if not non_emptyfile(files.phased_snps_vcf):
-        if pacbio_machine != "SEQUELII":
-            print ('wrong happening:', pacbio_machine)
-            reads_command_line.generate_ccs_reads()
 
         reads_command_line.turn_ccs_reads_to_fastq()
         align_command_line.map_ccs_reads()
@@ -91,7 +88,6 @@ def run_phasing(
 
     if not non_emptyfile(files.ccs_to_ref_phased):
         phase_ccs(files,sample)
-
 
     # if (not non_emptyfile(files.subreads_to_ref_phased)) and \
     #    (not non_emptyfile(files.ccs_to_ref_phased)):

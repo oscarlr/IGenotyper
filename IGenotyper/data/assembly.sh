@@ -21,12 +21,7 @@ then
     | awk '{ print ">"$1"\n"$10}' > ${output}/reads.fasta
 fi
 
-if [ ${pacbio_machine} != "SEQUELII" ]
-then
-    data_setting="-pacbio"
-else
-    data_setting="-pacbio-hifi"
-fi
+data_setting="-pacbio-hifi"
 
 # Assemble with CCS reads
 #  contigFilter="2 0 1.0 0.5 0"

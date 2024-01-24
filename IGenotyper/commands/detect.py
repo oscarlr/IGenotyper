@@ -35,7 +35,7 @@ def run_detect(outdir,hom,rhesus):
     
     detect_snps(files,sample)
     detect_alleles(files)
-    detect_msa_variants(files,sample,variants_command_line)
+    #detect_msa_variants(files,sample,variants_command_line)
 
 def main(args):
     run_detect(**vars(args))

@@ -14,8 +14,24 @@ import re
 import json
 
 
-def process_vcf_files(vcf_file,aim_positions_file,sample_name):
-    new_directory = '{}_Ancestry'.format(sample_name)
+def get_file_paths():
+    # Get the directory where AIM_pipeline.py is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Construct paths for required files
+    aim_positions = os.path.join(script_dir, "ALLAIMPostionshg38.txt")
+    aimfile = os.path.join(script_dir, "Capture96AIMPos.txt")
+    aim_string = os.path.join(script_dir, "Capture96AIMString.txt")
+    aim_1kgp_sup_gt = os.path.join(script_dir, "1KGP_sup_AIM_GT.txt")
+    aim_1kgp_sup_pop_code = os.path.join(script_dir, "1KGP_sup_Pop_code.txt")
+    extraparams = os.path.join(script_dir, "extraparams")
+    mainparams = os.path.join(script_dir, "mainparams")
+    
+    return aim_positions, aimfile, aim_string, aim_1kgp_sup_gt, aim_1kgp_sup_pop_code, extraparams, mainparams
+
+
+def process_vcf_files(vcf_file,aim_positions_file,sample_name,sample_path):
+    new_directory = os.path.join(sample_path,'{}_Ancestry'.format(sample_name))
     if not os.path.exists(new_directory):
         os.makedirs(new_directory)
     else:
@@ -272,36 +288,27 @@ def structure_result_interpretation(myfile, PopNo, ClnoOld, PopCfile, SampleNo ,
 def main():
     sample_name= sys.argv[1] #give an input necessary
     sample_path= sys.argv[2] #directory need to give where all sample are there
-    vcf_input = "{}/{}/snvs_from_ccs.vcf".format(sample_path, sample_name)
-    aim_positions="ALLAIMPostionshg38.txt" #alwaysFixed
-    process_vcf_files(vcf_input,aim_positions,sample_name)
-    directory_path = "{}/{}_Ancestry/".format(sample_path,sample_name)
+    aim_positions, aimfile, aim_str, ref_GT_file, PopCodeFILE, extra_params, main_params = get_file_paths()
+    vcf_input = os.path.join(sample_path,sample_name,'variants',"snvs_from_ccs.vcf")
+    process_vcf_files(vcf_input,aim_positions,sample_name,sample_path)
+    directory_path = os.path.join(sample_path,"{}_Ancestry".format(sample_name))
     concatenate_vcf_files(directory_path, sample_name)
-    aimfile="Capture96AIMPos.txt" #alwaysFixed
-    aim_pos_reading=read_aim_pos(aimfile)
-    aim_str="Capture96AIMString.txt" #alwaysFixed
-    bam_file = "{}/{}/ccs_to_ref_phased.sorted.bam".format(sample_path, sample_name)
+    aim_pos_reading =read_aim_pos(aimfile)
+    bam_file = "{}/{}/alignments/ccs_to_ref_phased.sorted.bam".format(sample_path, sample_name)
     vcf_file = "{}/{}_Ancestry/Sample_ALLAIM.vcf".format(sample_path,sample_name)
     ref_length=2504
-    ref_GT_file="1KGP_sup_AIM_GT.txt" #alwaysFixed 
     high_cov_pos=get_aim_coverage(aim_str,aim_pos_reading[1],bam_file)
     vcf_reading=read_Vcf(vcf_file)
     adding_sample_code=add_sample_code(ref_length,vcf_reading[0])
     converting_to_structure=convert_to_structure(aim_pos_reading[1],vcf_reading[1],high_cov_pos,adding_sample_code)
     final_output=out_ref_GT(ref_GT_file,converting_to_structure[0],converting_to_structure[1],directory_path)
     input_file = "{}/{}_Ancestry/1KGP_SuperPop_with_SampleGT.txt".format(sample_path,sample_name)
-    main_params = "mainparams" #alwaysFixed 
-    extra_params = "extraparams" #alwaysFixed 
     structure_output=run_structure(input_file,main_params,extra_params)
     inputfile="{}/{}_Ancestry/OutfileK5withSuperPop_new_f".format(sample_path,sample_name)
     PopNumber=5
     ClusterNo=5
-    PopCodeFILE="1KGP_sup_Pop_code.txt" #alwaysFixed 
     SampleNo=2504
     structure_result_interpretation(inputfile,PopNumber,ClusterNo,PopCodeFILE,SampleNo,high_cov_pos)
-
-
-
 
 if __name__ == "__main__":
     main()

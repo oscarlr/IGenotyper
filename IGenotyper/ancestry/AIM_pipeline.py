@@ -273,30 +273,30 @@ def main():
     sample_name= sys.argv[1] #give an input necessary
     sample_path= sys.argv[2] #directory need to give where all sample are there
     vcf_input = "{}/{}/snvs_from_ccs.vcf".format(sample_path, sample_name)
-    aim_positions="/home/s0saha07/Projects/AIM/AIM_github_final_version_make_8thJan2024/ALLAIMPostionshg38.txt" #alwaysFixed
+    aim_positions="ALLAIMPostionshg38.txt" #alwaysFixed
     process_vcf_files(vcf_input,aim_positions,sample_name)
-    directory_path = "/home/s0saha07/Projects/AIM/Eric_40_samples_AIM_work/Data/25thjan_2024_final_pipeline_made/{}_Ancestry/".format(sample_name)
+    directory_path = "{}/{}_Ancestry/".format(sample_path,sample_name)
     concatenate_vcf_files(directory_path, sample_name)
-    aimfile="/home/s0saha07/Projects/AIM/AIM_github_final_version_make_8thJan2024/Capture96AIMPos.txt" #alwaysFixed
+    aimfile="Capture96AIMPos.txt" #alwaysFixed
     aim_pos_reading=read_aim_pos(aimfile)
-    aim_str="/home/s0saha07/Projects/AIM/AIM_github_final_version_make_8thJan2024/Capture96AIMString.txt" #alwaysFixed
+    aim_str="Capture96AIMString.txt" #alwaysFixed
     bam_file = "{}/{}/ccs_to_ref_phased.sorted.bam".format(sample_path, sample_name)
-    vcf_file = "/home/s0saha07/Projects/AIM/Eric_40_samples_AIM_work/Data/25thjan_2024_final_pipeline_made/{}_Ancestry/Sample_ALLAIM.vcf".format(sample_name)
+    vcf_file = "{}/{}_Ancestry/Sample_ALLAIM.vcf".format(sample_path,sample_name)
     ref_length=2504
-    ref_GT_file="/home/s0saha07/Projects/AIM/AIM_github_final_version_make_8thJan2024/1KGP_sup_AIM_GT.txt" #alwaysFixed 
+    ref_GT_file="1KGP_sup_AIM_GT.txt" #alwaysFixed 
     high_cov_pos=get_aim_coverage(aim_str,aim_pos_reading[1],bam_file)
     vcf_reading=read_Vcf(vcf_file)
     adding_sample_code=add_sample_code(ref_length,vcf_reading[0])
     converting_to_structure=convert_to_structure(aim_pos_reading[1],vcf_reading[1],high_cov_pos,adding_sample_code)
     final_output=out_ref_GT(ref_GT_file,converting_to_structure[0],converting_to_structure[1],directory_path)
-    input_file = "/home/s0saha07/Projects/AIM/Eric_40_samples_AIM_work/Data/25thjan_2024_final_pipeline_made/{}_Ancestry/1KGP_SuperPop_with_SampleGT.txt".format(sample_name)
-    main_params = "/home/s0saha07/Projects/AIM/AIM_github_final_version_make_8thJan2024/mainparams" #alwaysFixed 
-    extra_params = "/home/s0saha07/Projects/AIM/AIM_github_final_version_make_8thJan2024/extraparams" #alwaysFixed 
+    input_file = "{}/{}_Ancestry/1KGP_SuperPop_with_SampleGT.txt".format(sample_path,sample_name)
+    main_params = "mainparams" #alwaysFixed 
+    extra_params = "extraparams" #alwaysFixed 
     structure_output=run_structure(input_file,main_params,extra_params)
-    inputfile="/home/s0saha07/Projects/AIM/Eric_40_samples_AIM_work/Data/25thjan_2024_final_pipeline_made/{}_Ancestry/OutfileK5withSuperPop_new_f".format(sample_name)
+    inputfile="{}/{}_Ancestry/OutfileK5withSuperPop_new_f".format(sample_path,sample_name)
     PopNumber=5
     ClusterNo=5
-    PopCodeFILE="/home/s0saha07/Projects/AIM/AIM_github_final_version_make_8thJan2024/1KGP_sup_Pop_code.txt" #alwaysFixed 
+    PopCodeFILE="1KGP_sup_Pop_code.txt" #alwaysFixed 
     SampleNo=2504
     structure_result_interpretation(inputfile,PopNumber,ClusterNo,PopCodeFILE,SampleNo,high_cov_pos)
 

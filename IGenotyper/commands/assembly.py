@@ -36,7 +36,7 @@ def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None):
         dir = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
         if run_type(files.input_bam) == "SEQUELII":
             contig = "%s/canu/canu.contigs.%s" % (dir,type_)
-        if run_type(files.input_bam) == "REVIO":
+        elif run_type(files.input_bam) == "REVIO":
             contig = "%s/canu/canu.contigs.%s" % (dir,type_)
         else:
             contig = "%s/contigs.%s" % (dir,type_)

@@ -1,4 +1,4 @@
-name: IGv2
+name: IGv2_AIM_test
 channels:
   - bioconda
   - conda-forge
@@ -221,6 +221,8 @@ dependencies:
   - xz=5.2.5=h7b6447c_0
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.4=h0b5b093_3
+  - structure=2.3.4  # the appropriate version of STRUCTURE
+  - vcftools=0.1.16 # the appropriate version of VCFTOOLS
   - pip:
     - pybedtools==0.8.1
 

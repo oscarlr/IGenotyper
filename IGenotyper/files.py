@@ -39,6 +39,7 @@ class FileManager():
         self.package_directory = os.path.dirname(os.path.abspath(__file__))
         self.scripts = "%s/scripts" % self.package_directory        
         self.templates = "%s/templates" % self.package_directory
+        self.ancestry = "%s/ancestry" % self.package_directory
         
         folders = [
             self.outdir,

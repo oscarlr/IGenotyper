@@ -2,24 +2,22 @@
 import json
 import pysam
 import os
-import warnings
-
 from pybedtools import BedTool
+
 from IGenotyper.files import FileManager
 from IGenotyper.common.cpu import CpuManager
+
 from IGenotyper.command_lines.variants import VariantTools
+
 from IGenotyper.detect.snps import detect_snps
 from IGenotyper.detect.msa_indels_svs import detect_msa_variants
 from IGenotyper.detect.alleles import detect_alleles
-from Bio import BiopythonWarning
+
 
 #from IGenotyper.clt import CommandLine
 #from IGenotyper.helper import assembly_location,intervals_overlapping,get_haplotype,load_bed_regions,vcf_header,get_phased_blocks,coords_not_overlapping,assembly_coords,create_directory,get_ref_seq,skip_read #non_overlapping,interval_intersection,contig_coords,hap_coords,non_overlapping_hap_coords,skip_read,coords_not_overlapping
 
 #from IGenotyper.commands.msa.msa_to_variants_without_hmm import path_to_variants
-
-# Filter out Biopython warnings                                                                                                                                            
-warnings.filterwarnings("ignore", category=BiopythonWarning)
 
 def add_arguments(subparser):
     subparser.add_argument('--rhesus', default=False, action='store_true')
@@ -44,10 +42,3 @@ def run_detect(outdir, hom, rhesus):
 
 def main(args):
     run_detect(**vars(args))
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Description of your program")
-    add_arguments(parser)
-    args = parser.parse_args()
-    main(args)

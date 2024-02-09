@@ -14,6 +14,7 @@ setup(
     package_data={'IGenotyper': ['data/*',
                                  'templates/*',
                                  'scripts/*',
+                                 'ancestry/*',
                                  'data/rhesus/*']},
     entry_points = {
         'console_scripts': ['IG = IGenotyper.main:main']

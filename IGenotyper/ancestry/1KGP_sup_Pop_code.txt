@@ -1,0 +1,5 @@
+EUR	1
+AMR	2
+AFR	3
+EAS	4
+SAS	5

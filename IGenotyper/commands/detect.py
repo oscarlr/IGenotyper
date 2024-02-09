@@ -1,20 +1,25 @@
 #!/bin/env python
 import json
-import os
 import pysam
-
+import os
 import warnings
-from Bio import BiopythonWarning
-
-# Filter out Biopython warnings
-warnings.filterwarnings("ignore", category=BiopythonWarning)
 
 from pybedtools import BedTool
 from IGenotyper.files import FileManager
 from IGenotyper.common.cpu import CpuManager
 from IGenotyper.command_lines.variants import VariantTools
 from IGenotyper.detect.snps import detect_snps
+from IGenotyper.detect.msa_indels_svs import detect_msa_variants
 from IGenotyper.detect.alleles import detect_alleles
+from Bio import BiopythonWarning
+
+#from IGenotyper.clt import CommandLine
+#from IGenotyper.helper import assembly_location,intervals_overlapping,get_haplotype,load_bed_regions,vcf_header,get_phased_blocks,coords_not_overlapping,assembly_coords,create_directory,get_ref_seq,skip_read #non_overlapping,interval_intersection,contig_coords,hap_coords,non_overlapping_hap_coords,skip_read,coords_not_overlapping
+
+#from IGenotyper.commands.msa.msa_to_variants_without_hmm import path_to_variants
+
+# Filter out Biopython warnings                                                                                                                                            
+warnings.filterwarnings("ignore", category=BiopythonWarning)
 
 def add_arguments(subparser):
     subparser.add_argument('--rhesus', default=False, action='store_true')
@@ -22,39 +27,23 @@ def add_arguments(subparser):
     subparser.add_argument('outdir', metavar='OUTDIR', help='Directory for output')
 
 def run_detect(outdir, hom, rhesus):
-    print("Initializing FileManager...")
     files = FileManager(outdir, rhesus=rhesus)
-    print("FileManager initialized")
 
     with open(files.input_args, 'r') as fh:
         phasing_args = json.load(fh)
-    sample = str(phasing_args["sample"])  # Convert sample to string explicitly
+    sample = str(phasing_args["sample"])  # Convert sample to string
 
-    print("Sample:", sample)
-
-    print("Initializing CPU Manager...")
     cpu = CpuManager()
-    print("CPU Manager initialized")
-
-    print("Initializing VariantTools...")
     variants_command_line = VariantTools(files, cpu, sample)
-    print("VariantTools initialized")
 
-    print("Detecting SNPs...")
     detect_snps(files, sample)
-    print("SNPs detected")
-
-    print("Detecting Alleles...")
     detect_alleles(files)
-    print("Alleles detected")
+    #detect_msa_variants(files,sample,variants_command_line)
 
-    print("Executing AIM_pipeline.py...")
     os.system("python %s/AIM_pipeline.py %s %s" % (files.ancestry, sample, outdir))
-    print("AIM_pipeline.py executed")
 
 def main(args):
     run_detect(**vars(args))
-    print("Execution complete")
 
 if __name__ == "__main__":
     import argparse

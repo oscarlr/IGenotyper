@@ -1,4 +1,4 @@
-name: IGv2_AIM_test
+name: IGv2
 channels:
   - bioconda
   - conda-forge

@@ -54,9 +54,8 @@ make install
 ## Getting IGH specific reference
 
 ```
-# Wrong reference fasta file. Contact Oscar for correct reference.fasta.
-wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta
-wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta.fai
+wget http://immunogenomics.louisville.edu/immune_receptor_genomics/current/reference.fasta .
+samtools faidx reference.fasta
 
 sawriter reference.fasta
 cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/

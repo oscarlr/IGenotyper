@@ -54,6 +54,7 @@ make install
 ## Getting IGH specific reference
 
 ```
+# Wrong reference fasta file. Contact Oscar for correct reference.fasta.
 wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta
 wget https://watsonlab.blob.core.windows.net/public/reference/hg38_igh_trab/reference.fasta.fai
 

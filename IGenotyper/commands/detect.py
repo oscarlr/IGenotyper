@@ -35,7 +35,7 @@ def run_detect(outdir, hom, rhesus):
     variants_command_line = VariantTools(files, cpu, sample)
 
     detect_snps(files, sample)
-    detect_alleles(files)
+    #detect_alleles(files)
     #detect_msa_variants(files,sample,variants_command_line)
 
     os.system("python %s/AIM_pipeline.py %s %s" % (files.ancestry, sample, outdir))

@@ -1,2 +1,5 @@
 # Project exclude paths
 /venv/
+IGenotyper/data/reference.fasta
+IGenotyper/data/reference.fasta.sa
+

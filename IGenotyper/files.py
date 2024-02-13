@@ -74,16 +74,31 @@ class FileManager():
         if self.rhesus:
             data_directory = "%s/data/rhesus" % self.package_directory
         
-        self.ref = "%s/reference.fasta" % data_directory
-        self.target_regions = "%s/target_regions.bed" % data_directory
-        self.sv_coords = "%s/sv_coords.bed" % data_directory
-        self.introns = "%s/introns.bed" % data_directory
-        self.lpart1 = "%s/lpart1.bed" % data_directory
-        self.rss = "%s/rss.bed" % data_directory
-        self.gene_coords = "%s/gene_coords.bed" % data_directory
-        self.constant_gene_coords = "%s/constant_gene_coords.bed" % data_directory
-        self.vdj_coords = "%s/vdj_coords.bed" % data_directory
-        self.allele_db = "%s/alleles.fasta" % data_directory
+            self.ref = "%s/reference.fasta" % data_directory
+            self.target_regions = "%s/target_regions.bed" % data_directory
+            self.sv_coords = "%s/sv_coords.bed" % data_directory
+            self.introns = "%s/introns.bed" % data_directory
+            self.lpart1 = "%s/lpart1.bed" % data_directory
+            self.rss = "%s/rss.bed" % data_directory
+            self.gene_coords = "%s/gene_coords.bed" % data_directory
+            self.constant_gene_coords = "%s/constant_gene_coords.bed" % data_directory
+            self.vdj_coords = "%s/vdj_coords.bed" % data_directory
+            self.allele_db = "%s/alleles.fasta" % data_directory
+        else:
+            self.ref = "%s/reference.fasta" % data_directory
+            self.target_regions = "%s/target_regions.bed" % data_directory
+            self.sv_coords = "%s/sv_coords.bed" % data_directory
+            self.introns = "%s/intron.bed" % data_directory
+            self.gene_coords = "%s/region.bed" % data_directory
+            self.vdj_coords = "%s/vdj_coords.bed" % data_directory
+            self.allele_db = "%s/alleles.fasta" % data_directory
+            self.exon1= "%s/exon_1.bed" % data_directory
+            self.exon2= "%s/exon_2.bed" % data_directory
+            self.heptamer= "%s/heptamer.bed" % data_directory
+            self.lpart2= "%s/l-part2.bed" % data_directory
+            self.nonamer= "%s/nonamer.bed" % data_directory
+            self.spacer= "%s/spacer.bed" % data_directory
+            self.utr= "%s/utr.bed" % data_directory
 
         self.subreads_to_ref = "%s/subreads_to_ref.sorted.bam" % self.preprocess
         self.subreads_to_ref_phased = "%s/subreads_to_ref_phased.sorted.bam" % self.alignments

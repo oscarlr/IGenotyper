@@ -179,33 +179,52 @@ def reads_in_pos(pileupcolumn,in_phased_region):
                       hap])
     return reads
 
-def snp_info(bases,chrom,pos,**kwargs):
-    read_support = snp_read_support(kwargs["ccs_snps"],chrom,pos)
+def snp_info(bases, chrom, pos, **kwargs):
+    read_support = snp_read_support(kwargs["ccs_snps"], chrom, pos)
     contig = ",".join([i[0] for i in bases])
-    sv = snp_feat_overlap(kwargs["sv"],chrom,pos)
-    intronic = snp_feat_overlap(kwargs["intronic"],chrom,pos)
-    lp1 = snp_feat_overlap(kwargs["lp1"],chrom,pos)
-    rss = snp_feat_overlap(kwargs["rss"],chrom,pos)
-    gene = snp_feat_overlap(kwargs["gene"],chrom,pos)
-    vdj = snp_feat_overlap(kwargs["vdj"],chrom,pos)
-    read_genotype = snp_read_genotype(kwargs["ccs_snps"],chrom,pos)
+    sv = snp_feat_overlap(kwargs["sv"], chrom, pos)
+    intronic = snp_feat_overlap(kwargs["intronic"], chrom, pos)
+    gene = snp_feat_overlap(kwargs["gene"], chrom, pos)
+    vdj = snp_feat_overlap(kwargs["vdj"], chrom, pos)
+    exon1 = snp_feat_overlap(kwargs["exon1"], chrom, pos)
+    exon2 = snp_feat_overlap(kwargs["exon2"], chrom, pos)
+    heptamer = snp_feat_overlap(kwargs["heptamer"], chrom, pos)
+    lpart2 = snp_feat_overlap(kwargs["lpart2"], chrom, pos)
+    nonamer = snp_feat_overlap(kwargs["nonamer"], chrom, pos)
+    spacer = snp_feat_overlap(kwargs["spacer"], chrom, pos)
+    utr = snp_feat_overlap(kwargs["utr"], chrom, pos)
+    constant = snp_feat_overlap(kwargs["constant"], chrom, pos)
+    read_genotype = snp_read_genotype(kwargs["ccs_snps"], chrom, pos)
+
     info = ("read_support=%s;"
             "contig=%s;"
             "SV=%s;"
             "intronic=%s;"
-            "LP1=%s;"
-            "RSS=%s;"
             "gene=%s;"
             "VDJ=%s;"
+            "exon1=%s;"
+            "exon2=%s;"
+            "heptamer=%s;"
+            "lpart2=%s;"
+            "nonamer=%s;"
+            "spacer=%s;"
+            "utr=%s;"
+            "constant=%s;"
             "read_genotype=%s" %
             (read_support,
              contig,
              sv,
-             intronic,                
-             lp1,
-             rss,
+             intronic,
              gene,
              vdj,
+             exon1,
+             exon2,
+             heptamer,
+             lpart2,
+             nonamer,
+             spacer,
+             utr,
+             constant,
              read_genotype))
     return info
     
@@ -305,10 +324,16 @@ def detect_snps(files,sample):
     bedfh = {
         "sv": load_bed_regions(files.sv_coords,True),
         "intronic": load_bed_regions(files.introns,True),
-        "lp1": load_bed_regions(files.lpart1,True),
-        "rss": load_bed_regions(files.rss,True),
         "gene": load_bed_regions(files.gene_coords,True),
-        "vdj": load_bed_regions(files.vdj_coords,True)
+        "vdj": load_bed_regions(files.vdj_coords,True),
+        "exon1": load_bed_regions(files.exon1,True),
+        "exon2": load_bed_regions(files.exon2,True),
+        "heptamer": load_bed_regions(files.heptamer,True),
+        "lpart2": load_bed_regions(files.lpart2,True),
+        "nonamer": load_bed_regions(files.nonamer,True),
+        "spacer": load_bed_regions(files.spacer,True),
+        "utr": load_bed_regions(files.utr,True),
+        "constant": load_bed_regions(files.constant,True)
         }
 
     header = vcf_header(sample)

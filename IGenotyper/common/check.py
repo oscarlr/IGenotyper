@@ -9,6 +9,8 @@ def check_tools():
         "samtools"
     ]
 
+    tools = []
+    
     missing_tools = []
 
     for tool in tools:

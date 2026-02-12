@@ -28,11 +28,23 @@ class ReadManip(CommandLine):
         self.run_command(command,output_file)
 
     def turn_ccs_reads_to_fastq(self):
-        args = [self.files.ccs_fastq_unedited,
-                self.files.ccs_bam,
-                self.files.ccs_fastq_unedited,
+        args = [self.files.ccs_bam,
                 self.files.ccs_fastq]
-        command = ("bam2fasta "
-                   "-o %s %s\n"
-                   "zcat %s.fasta.gz | sed 's/ccs/0_8/g' | sed 's/\/fwd//g' | sed 's/\/rev//g' > %s\n" % tuple(args))
-        self.run_command(command,self.files.ccs_fastq)
+        command = (
+            "samtools fastq %s | "
+            "sed 's/ccs/0_8/g' | "
+            "sed 's/\\/fwd//g' | "
+            "sed 's/\\/rev//g' "
+            "> %s\n" % tuple(args)
+        )
+        self.run_command(command, self.files.ccs_fastq)
+
+    # def turn_ccs_reads_to_fastq(self):
+    #     args = [self.files.ccs_fastq_unedited,
+    #             self.files.ccs_bam,
+    #             self.files.ccs_fastq_unedited,
+    #             self.files.ccs_fastq]
+    #     command = ("bam2fasta "
+    #                "-o %s %s\n"
+    #                "zcat %s.fasta.gz | sed 's/ccs/0_8/g' | sed 's/\/fwd//g' | sed 's/\/rev//g' > %s\n" % tuple(args))
+    #     self.run_command(command,self.files.ccs_fastq)

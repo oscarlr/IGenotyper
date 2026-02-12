@@ -93,7 +93,8 @@ class Align(CommandLine):
         #sorted_bam_tmp = "%s.sorted.bam" % prefix
         if not non_emptyfile(self.files.ccs_to_ref):
             if not non_emptyfile("%s.bai" % self.files.ccs_to_ref):
-                self.map_reads_with_blasr(self.files.ccs_fastq,prefix,self.files.ref)
+                #self.map_reads_with_blasr(self.files.ccs_fastq,prefix,self.files.ref)
+                self.map_reads_with_minimap2(self.files.ccs_fastq,prefix,self.files.ref)
                 self.sam_to_sorted_bam(prefix,self.files.ccs_to_ref)
                 #self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
             #self.select_target_reads(sorted_bam_tmp,self.files.ccs_to_ref)
@@ -139,3 +140,32 @@ class Align(CommandLine):
         command = ("samtools view -Sbh -F 3884 %s > %s \n"
                    "samtools index %s " % tuple(args))
         self.run_command(command,"%s.bai" % outbam)
+
+    def map_reads_with_minimap2(self, reads, prefix, ref, opts=""):
+        """
+        Map reads/contigs to a reference using minimap2.
+        Default preset: HiFi reads (-x map-hifi)
+        """
+
+        preset = opts.strip()
+        if preset == "":
+            preset = "-x map-hifi"
+
+        args = [self.cpu.threads,
+                preset,
+                ref,
+                reads,
+                prefix]
+
+        command = (
+            "minimap2 "
+            "-t %s "
+            "-a "
+            "%s "
+            "%s "
+            "%s "
+            "> %s.sam " % tuple(args)
+        )
+
+        output_file = "%s.sam" % prefix
+        self.run_command(command, output_file)

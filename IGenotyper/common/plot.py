@@ -1,8 +1,8 @@
 #!/bin/env python
 import pandas
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot
+#import matplotlib
+#matplotlib.use('Agg')
+#from matplotlib import pyplot
 
 def plot_histogram(vals,title,plotfn):
     values = pandas.Series(vals)

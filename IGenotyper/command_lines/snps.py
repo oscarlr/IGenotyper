@@ -15,7 +15,7 @@ class Snps(CommandLine):
                 snp_candidates]
         command = ("CONDA_BASE=$(conda info --base) \n"
                    "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate whatshap-latest \n"
+                   "conda activate whatshap-env \n"
                    "whatshap find_snv_candidates "
                    "--sample %s "
                    "%s "

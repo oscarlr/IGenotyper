@@ -79,10 +79,10 @@ def coverage_stats(files,bamfn):
 def input_stats(files,primary_alignment_bam):
     ccs_read_lengths = read_lengths(files.ccs_bam)
     ccs_read_length_avg = sum(ccs_read_lengths)/len(ccs_read_lengths)    
-    plot_histogram(ccs_read_lengths,"CCS read lengths",files.plot_ccs_read_lengths)
+    #plot_histogram(ccs_read_lengths,"CCS read lengths",files.plot_ccs_read_lengths)
     ccs_quals = read_quality(files.ccs_bam)
     ccs_quals_avg = sum(ccs_quals)/len(ccs_quals)
-    plot_histogram(ccs_quals,"CCS quality scores",files.plot_ccs_read_quals)
+    #plot_histogram(ccs_quals,"CCS quality scores",files.plot_ccs_read_quals)
     regions_covered = target_region_coverage(files,primary_alignment_bam)
     igh_bases = None
     for chrom,start,end,num_bases in regions_covered:

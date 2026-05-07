@@ -75,6 +75,10 @@ def phase_alignments(vcffn,bam,sample,outbam):
     for read in unphased_bam.fetch():
         if read.is_unmapped:
             continue
+        if read.is_secondary:
+            continue
+        if read.is_supplementary:
+            continue
         chrom = unphased_bam.get_reference_name(read.reference_id)
         tagged_read = phase_read(read,phase_snps,chrom)
         phased_bam.write(tagged_read)

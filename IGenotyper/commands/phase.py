@@ -108,7 +108,7 @@ def run_phasing(
     phasing_stats(sample,files,plot_command_line,align_command_line)
 
     save_parameters(files,sample,input_vcf)
-    clean_up(files)
+    #clean_up(files)
     
 def main(args):
     run_phasing(**vars(args))

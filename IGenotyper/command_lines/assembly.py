@@ -1,6 +1,5 @@
-#!/bin/env python
+#!/usr/bin/env python3
 import os
-from lsf.lsf import Lsf
 
 from IGenotyper.command_lines.clt import CommandLine
 
@@ -14,10 +13,15 @@ class Assembly(CommandLine):
                 command = "sh %s" % script
                 os.system(command)
         else:
+            try:
+                from lsf.lsf import Lsf
+            except ImportError as error:
+                raise RuntimeError(
+                    "Cluster mode requires the Watson-IG/cluster Python package"
+                ) from error
             hpc = Lsf()
             for job in assembly_scripts:
                 hpc.config(cpu=self.cpu.threads,walltime=self.cpu.walltime,
                            memory=self.cpu.mem,queue=self.cpu.queue)
                 hpc.submit("%s" % job)
             hpc.wait()
-

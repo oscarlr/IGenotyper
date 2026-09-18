@@ -20,10 +20,6 @@ def main():
     if command_name not in commands:
         sys.exit("Please run one of the following commands: \n%s" % "\n".join(commands))
 
-    missing_tools = check_tools()
-    if len(missing_tools) != 0:
-        sys.exit("Install tools: %s" % ",".join(missing_tools))
-
     parser = argparse.ArgumentParser(description='Process IGH capture data')
     subparsers = parser.add_subparsers()
 
@@ -32,6 +28,9 @@ def main():
     command.add_arguments(subparser)
 
     args = parser.parse_args(sys.argv[1:])
+    missing_tools = check_tools(command_name)
+    if missing_tools:
+        sys.exit("Install tools: %s" % ",".join(missing_tools))
     command.main(args)
 
 if __name__ == "__main__":

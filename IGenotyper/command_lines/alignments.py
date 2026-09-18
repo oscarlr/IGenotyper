@@ -1,171 +1,151 @@
-#!/bin/env python
-import os
-from lsf.lsf import Lsf
-from IGenotyper.common.helper import non_emptyfile
+#!/usr/bin/env python3
+from shlex import quote
 
-from IGenotyper.command_lines.clt import CommandLine
+from IGenotyper.command_lines.clt import CommandLine, non_emptyfile
+
 
 class Align(CommandLine):
-    def __init__(self,files,cpu,sample):
-        CommandLine.__init__(self,files,cpu,sample)
+    def map_reads_with_minimap2(self, reads, sorted_bam, ref, preset="map-hifi"):
+        """Map reads and stream directly into a sorted, indexed BAM."""
+        if reads.lower().endswith((".bam", ".cram")):
+            query = "-"
+            input_command = "samtools fasta -@ %s %s | " % (
+                int(self.cpu.threads),
+                quote(reads),
+            )
+        else:
+            query = quote(reads)
+            input_command = ""
+        minimap2_ref = ref
+        if ref == self.files.ref:
+            minimap2_ref = getattr(self.files, "minimap2_ref", ref)
+        command = (
+            "set -o pipefail; %sminimap2 -t %s -a -x %s %s %s | "
+            "samtools sort -@ %s -o %s - && samtools index %s"
+        ) % (
+            input_command,
+            int(self.cpu.threads),
+            quote(preset),
+            quote(minimap2_ref),
+            query,
+            int(self.cpu.threads),
+            quote(sorted_bam),
+            quote(sorted_bam),
+        )
+        self.run_command(command, "%s.bai" % sorted_bam)
 
-    def map_reads_with_blasr(self,reads,prefix,ref,opts=""):
-        args = [reads,
-                ref,
-                ref,
-                prefix,
-                opts,
-                self.cpu.threads]
-        command = ("blasr "
-                   "%s "
-                   "%s "
-                   "--sa %s.sa "
-                   "--out %s.sam "
-                   "--sam "
-                   "--noSplitSubreads "
-                   "%s "
-                   "--nproc %s " % tuple(args))
-        output_file = "%s.sam" % prefix
-        self.run_command(command,output_file)
-
-    def sam_to_sorted_bam(self,prefix,sorted_bam):
+    def sam_to_sorted_bam(self, prefix, sorted_bam):
         sam = "%s.sam" % prefix
-        bam = "%s.bam" % prefix
-        args = [sam,bam,bam,sorted_bam,sorted_bam]
-        command = ("samtools view -Sbh %s > %s \n"
-                   "samtools sort %s -o %s > /dev/null 2>&1 \n"
-                   "samtools index %s" % tuple(args))
-        sorted_bam_bai = "%s.bai" % sorted_bam
-        self.run_command(command,sorted_bam_bai)
+        command = "samtools sort -@ %s -o %s %s && samtools index %s" % (
+            int(self.cpu.threads),
+            quote(sorted_bam),
+            quote(sam),
+            quote(sorted_bam),
+        )
+        self.run_command(command, "%s.bai" % sorted_bam)
 
     def map_subreads(self):
-        print "Mapping subreads..."
+        print("Mapping subreads...")
         prefix = "%s/subreads_to_ref" % self.files.tmp
         sorted_bam_tmp = "%s.sorted.bam" % prefix
         if not non_emptyfile(self.files.subreads_to_ref):
             if not non_emptyfile("%s.bai" % sorted_bam_tmp):
-                self.map_reads_with_blasr(self.files.input_bam,prefix,self.files.ref)
-                self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
-            self.select_target_reads(sorted_bam_tmp,self.files.subreads_to_ref)
+                self.map_reads_with_minimap2(
+                    self.files.input_bam, sorted_bam_tmp, self.files.ref, "map-pb"
+                )
+            self.select_target_reads(sorted_bam_tmp, self.files.subreads_to_ref)
 
     def create_igh_ref(self):
-        print "Creating igh reference..."
-        igh_ref = "%s/igh_ref.fasta" % self.files.tmp        
-        args = [self.files.ref,igh_ref,
-                igh_ref,
-                igh_ref]
-        command = ("samtools faidx %s igh > %s \n"
-                   "samtools faidx %s \n"
-                   "sawriter %s \n" % tuple(args))
-        self.run_command(command,"%s.sa" % igh_ref)
+        print("Creating IGH reference...")
+        igh_ref = "%s/igh_ref.fasta" % self.files.tmp
+        command = "samtools faidx %s igh > %s && samtools faidx %s" % (
+            quote(self.files.ref),
+            quote(igh_ref),
+            quote(igh_ref),
+        )
+        self.run_command(command, "%s.fai" % igh_ref)
         return igh_ref
 
     def map_igh_assembly(self):
-        print "Mapping igh assembly..."
+        print("Mapping IGH assembly...")
         igh_ref = self.create_igh_ref()
-        prefix = "%s/igh_assembly_to_ref" % self.files.tmp
-        self.map_reads_with_blasr(self.files.igh_assembly_fasta,prefix,igh_ref,"--insertion 0 --deletion 0 --minMatch 15 --maxMatch 30")
-        self.sam_to_sorted_bam(prefix,self.files.igh_assembly_to_ref)
-
-        prefix = "%s/igh_assembly_to_ref_subs" % self.files.tmp
-        self.map_reads_with_blasr(self.files.igh_assembly_fasta,prefix,igh_ref,"--insertion 16 --deletion 20 --minMatch 15 --maxMatch 30")
-        self.sam_to_sorted_bam(prefix,self.files.igh_assembly_to_ref_subs)
-        
-    def map_assembly(self):
-        print "Mapping assembly..."
-        prefix = "%s/assembly_to_ref" % self.files.tmp
-        self.map_reads_with_blasr(self.files.assembly_fasta,prefix,self.files.ref,"--insertion 16 --deletion 20 --minMatch 15 --maxMatch 30")
-        #self.map_reads_with_blasr(self.files.assembly_fasta,prefix,self.files.ref,"--insertion 0 --deletion 0 --minMatch 15 --maxMatch 30")
-        self.sam_to_sorted_bam(prefix,self.files.assembly_to_ref)
-        #self.map_igh_assembly()
-
-    def select_target_reads(self,bam_file,igh_bam_file):
-        ## add aim regions
-        args = [bam_file,self.files.target_regions,igh_bam_file,
-                igh_bam_file]
-        command = ("samtools view -Sbh %s -L %s > %s \n"
-                   "samtools index %s" % tuple(args))
-        self.run_command(command,"%s.bai" % igh_bam_file)
-
-    def map_ccs_reads(self):
-        print "Mapping CCS reads..."
-        prefix = "%s/ccs_to_ref" % self.files.tmp
-        #sorted_bam_tmp = "%s.sorted.bam" % prefix
-        if not non_emptyfile(self.files.ccs_to_ref):
-            if not non_emptyfile("%s.bai" % self.files.ccs_to_ref):
-                #self.map_reads_with_blasr(self.files.ccs_fastq,prefix,self.files.ref)
-                self.map_reads_with_minimap2(self.files.ccs_fastq,prefix,self.files.ref)
-                self.sam_to_sorted_bam(prefix,self.files.ccs_to_ref)
-                #self.sam_to_sorted_bam(prefix,sorted_bam_tmp)
-            #self.select_target_reads(sorted_bam_tmp,self.files.ccs_to_ref)
-
-    def blast_seq(self,fastafn,blast_out):
-        args = [fastafn,fastafn,blast_out]
-        command = ("blastn -query %s -subject %s "
-                   "-outfmt \"6 length pident nident mismatch gapopen gaps qseqid qstart qend qlen sseqid sstart send slen sstrand\" "
-                   "> %s " % tuple(args))
-        self.run_command(command,blast_out)
-
-    def map_merged_assembly(self):
-        print "Mapping merged assembly..."
-        prefix = "%s/merged_assembly_to_ref" % self.files.tmp
-        #opt="--insertion 0 --deletion 0 --minMatch 35 --maxMatch 50 --scoreMatrix \"-100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100 50 50 50 50 50 -100\""
-        opt="--minMatch 35 --maxMatch 50"
-        self.map_reads_with_blasr(self.files.merged_assembly,prefix,self.files.ref,opt)
-        self.sam_to_sorted_bam(prefix,self.files.merged_assembly_to_ref)
-
-    def bam_to_bigwig(self,bam,bigwig):
-        args =  [bam,bigwig]
-        command = ("CONDA_BASE=$(conda info --base) \n"
-                   "source ${CONDA_BASE}/etc/profile.d/conda.sh \n"
-                   "conda activate pygenometracks \n"
-                   "bamCoverage -b %s -o %s " % tuple(args))
-        self.run_command(command,bigwig)
-
-    def select_hap_sequence(self,bam,hap,outbam):
-        args = [bam,hap,outbam,
-                outbam]
-        command= ("samtools view -Sbh -F 3884 %s -r %s > %s \n"
-                  "samtools index %s " % tuple(args))
-        self.run_command(command,"%s.bai" % outbam)
-        
-    def hap_bam_to_bigwig(self,bam,hap,bigwig):
-        outbam = "%s/%s.bam" % (self.files.tmp,hap)
-        self.select_hap_sequence(bam,hap,outbam)
-        self.bam_to_bigwig(outbam,bigwig)
-        
-    def primary_alignments(self,inbam,outbam):
-        args = [inbam,outbam,
-                outbam]
-        command = ("samtools view -Sbh -F 3884 %s > %s \n"
-                   "samtools index %s " % tuple(args))
-        self.run_command(command,"%s.bai" % outbam)
-
-    def map_reads_with_minimap2(self, reads, prefix, ref, opts=""):
-        """
-        Map reads/contigs to a reference using minimap2.
-        Default preset: HiFi reads (-x map-hifi)
-        """
-
-        preset = opts.strip()
-        if preset == "":
-            preset = "-x map-hifi"
-
-        args = [self.cpu.threads,
-                preset,
-                ref,
-                reads,
-                prefix]
-
-        command = (
-            "minimap2 "
-            "-t %s "
-            "-a "
-            "%s "
-            "%s "
-            "%s "
-            "> %s.sam " % tuple(args)
+        self.map_reads_with_minimap2(
+            self.files.igh_assembly_fasta,
+            self.files.igh_assembly_to_ref_subs,
+            igh_ref,
+            "asm20",
         )
 
-        output_file = "%s.sam" % prefix
-        self.run_command(command, output_file)
+    def map_assembly(self):
+        print("Mapping assembly...")
+        self.map_reads_with_minimap2(
+            self.files.assembly_fasta,
+            self.files.assembly_to_ref,
+            self.files.ref,
+            "asm20",
+        )
+
+    def select_target_reads(self, bam_file, target_bam_file):
+        command = "samtools view -bh %s -L %s -o %s && samtools index %s" % (
+            quote(bam_file),
+            quote(self.files.target_regions),
+            quote(target_bam_file),
+            quote(target_bam_file),
+        )
+        self.run_command(command, "%s.bai" % target_bam_file)
+
+    def map_ccs_reads(self):
+        print("Mapping CCS reads...")
+        prefix = "%s/ccs_to_ref" % self.files.tmp
+        if not non_emptyfile(self.files.ccs_to_ref):
+            if not non_emptyfile("%s.bai" % self.files.ccs_to_ref):
+                self.map_reads_with_minimap2(
+                    self.files.ccs_fastq,
+                    self.files.ccs_to_ref,
+                    self.files.ref,
+                    "map-hifi",
+                )
+
+    def blast_seq(self, fastafn, blast_out):
+        command = (
+            "blastn -query %s -subject %s "
+            "-outfmt '6 length pident nident mismatch gapopen gaps qseqid "
+            "qstart qend qlen sseqid sstart send slen sstrand' > %s"
+            % (quote(fastafn), quote(fastafn), quote(blast_out))
+        )
+        self.run_command(command, blast_out)
+
+    def map_merged_assembly(self):
+        print("Mapping merged assembly...")
+        self.map_reads_with_minimap2(
+            self.files.merged_assembly,
+            self.files.merged_assembly_to_ref,
+            self.files.ref,
+            "asm20",
+        )
+
+    def bam_to_bigwig(self, bam, bigwig):
+        command = "bamCoverage -b %s -o %s" % (quote(bam), quote(bigwig))
+        self.run_command(command, bigwig)
+
+    def select_hap_sequence(self, bam, hap, outbam):
+        command = "samtools view -bh -F 3884 -r %s -o %s %s && samtools index %s" % (
+            quote(hap),
+            quote(outbam),
+            quote(bam),
+            quote(outbam),
+        )
+        self.run_command(command, "%s.bai" % outbam)
+
+    def hap_bam_to_bigwig(self, bam, hap, bigwig):
+        outbam = "%s/%s.bam" % (self.files.tmp, hap)
+        self.select_hap_sequence(bam, hap, outbam)
+        self.bam_to_bigwig(outbam, bigwig)
+
+    def primary_alignments(self, inbam, outbam):
+        command = "samtools view -bh -F 3884 -o %s %s && samtools index %s" % (
+            quote(outbam),
+            quote(inbam),
+            quote(outbam),
+        )
+        self.run_command(command, "%s.bai" % outbam)

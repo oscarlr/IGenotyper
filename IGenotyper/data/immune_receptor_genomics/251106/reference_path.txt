@@ -1,0 +1,1 @@
+http://immunogenomics.louisville.edu/wasp/251106/reference.fasta

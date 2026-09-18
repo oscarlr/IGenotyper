@@ -28,6 +28,7 @@ def add_arguments(subparser):
     subparser.add_argument('--queue', metavar='QUEUE',default="premium",help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME',default=24,help='Walltime for cluster')
     subparser.add_argument('--tmp', metavar='TMP', default="tmp", help='Temporary folder')
+    subparser.add_argument('--data-dir', help='Directory containing reference.fasta')
     subparser.add_argument('--input_vcf', metavar='VCF', help='Phased VCF file to phase reads')
     subparser.add_argument('bam', metavar='BAM', help='PacBio bam file')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
@@ -37,7 +38,8 @@ def save_parameters(files,sample,input_vcf):
         "bam": files.input_bam,
         "sample": sample,
         "input_vcf": input_vcf,
-        "tmp": files.tmp
+        "tmp": files.tmp,
+        "data_dir": files.data_directory
     }
     with open(files.input_args,'w') as fh:
         json.dump(paramaters,fh,sort_keys=True, indent=4)
@@ -53,9 +55,10 @@ def run_phasing(
         walltime,
         input_vcf,
         tmp,
-        rhesus
+        rhesus,
+        data_dir
 ):    
-    files = FileManager(outdir,bam,tmp,rhesus)
+    files = FileManager(outdir,bam,tmp,rhesus,data_dir)
 
     if non_emptyfile(files.input_args):        
         cpu = CpuManager(threads,mem,cluster,queue,walltime)

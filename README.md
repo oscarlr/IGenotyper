@@ -2,7 +2,7 @@
 
 [Introduction](#introduction)  
 [Installation](#installation)  
-[Getting IGH specific reference](#getting-igh-specific-reference)<br>
+[Reference data](#reference-data)<br>
 [Testing IGenotyper installation](#testing-igenotyper-installation)<br>
 [Usage](#usage)<br>
 [Running IGenotyper](#running-igenotyper)<br>
@@ -13,138 +13,144 @@
 
 ## Installation
 
-```
-
-git clone https://github.com/oscarlr/IGv2.git
-cd IGv2
-
-conda env create -f pygenometracks.yml
-
+```bash
+git clone https://github.com/oscarlr/IGenotyper.git
+cd IGenotyper
 conda env create -f environment.yml
-conda activate IGv2
-python setup.py install
-conda deactivate
+conda activate igenotyper
+python -m pip install .
+./scripts/fetch_reference.sh
 
-conda create -n whatshap-latest python=3.7
-conda activate whatshap-latest
-pip install git+https://github.com/whatshap/whatshap
-conda deactivate
-
-conda activate IGv2
 cd ..
-git clone https://github.com/oscarlr/cluster
+git clone https://github.com/Watson-IG/cluster.git
 cd cluster
-python setup.py install
+python -m pip install .
 export SJOB_DEFALLOC=NONE
-
-# Install Kalign
-conda deactivate
-cd ..
-wget https://github.com/TimoLassmann/kalign/archive/refs/tags/v3.3.tar.gz
-tar -zxvf v3.3.tar.gz
-cd kalign-3.3
-./autogen.sh
-./configure --prefix=$HOME
-make
-make check
-make install
-
 ```
 
-## Getting IGH specific reference
+The `Watson-IG/cluster` package is needed only when using `--cluster`.
 
+## Reference data
+
+```bash
+./scripts/fetch_reference.sh
 ```
-wget http://immunogenomics.louisville.edu/immune_receptor_genomics/current/reference.fasta .
-samtools faidx reference.fasta
 
-sawriter reference.fasta
-cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/
+The script downloads the current reference to
+`${XDG_DATA_HOME:-$HOME/.local/share}/igenotyper`, validates it against the
+FASTA index published by Watson-IG/immune_receptor_genomics, and builds a
+reusable minimap2 index. To use another location, run
+`./scripts/fetch_reference.sh --data-dir /path/to/data` and pass the same path
+to `IG phase --data-dir /path/to/data` (or set `IGENOTYPER_DATA_DIR`). Upstream
+versioned annotations remain bundled with the package so they always match the
+selected reference release.
 
-# For rheMac10
-sawriter reference.fasta
-cp reference.fasta* ~/anaconda3/envs/IGv2/lib/python2.7/site-packages/IGenotyper-1.1-py2.7.egg/IGenotyper/data/rhesus/
+The download is approximately 3.1 GB. The installer also creates
+`reference.fasta.fai` and `reference.fasta.mmi`. Existing valid downloads are
+reused, and an absent minimap2 index is built without downloading the FASTA
+again.
 
+Custom location example:
+
+```bash
+./scripts/fetch_reference.sh --data-dir /data/igenotyper
+export IGENOTYPER_DATA_DIR=/data/igenotyper
 ```
+
+The command-line `--data-dir` option takes precedence over the environment
+variable. IGenotyper validates the FASTA index and all selected BED coordinates
+before starting an analysis.
 
 ## Testing IGenotyper installation
-```
-cd test
-IG phase subset_bam/reads.bam test # There will be an warning message about no reads for hap0.bw -- you can ignore this
-IG assembly test
 
+Run the tool and Python regression tests:
+
+```bash
+scripts/smoke_test_environment.sh
+python -m unittest discover -s test -p 'test_*.py' -v
 ```
+
+Run the deterministic simulated minimap2/WhatsHap integration test:
+
+```bash
+test/simulated/run.sh
+```
+
+See `test/simulated/README.md` for the truth variants and test design.
 
 ## Running IGenotyper
-```
-# <pacbio bam file> must have a pbi and bai index. They can be created using pbindex and samtools index, respectively.
 
-IG phase <pacbio bam file> <output> 
-IG assembly <output> 
-IG detect <output> 
+The input PacBio BAM must have a SAMtools `.bai` index.
+
+```bash
+samtools index reads.bam
+IG phase --sample SAMPLE --threads 8 reads.bam output
+IG assembly --threads 8 output
+IG detect output
 ```
 
 ## Usage
-```
-IG phase --help
-usage: IG phase [-h] [--rhesus] [--sample SAMPLE] [--threads THREADS]
-                [--mem MEM] [--cluster] [--queue QUEUE] [--walltime WALLTIME]
-                [--tmp TMP] [--input_vcf VCF]
-                BAM OUTDIR
 
-positional arguments:
-  BAM                  PacBio bam file
-  OUTDIR               Directory for output
+### `IG phase`
 
-optional arguments:
-  -h, --help           show this help message and exit
-  --rhesus
-  --sample SAMPLE      Name of sample
-  --threads THREADS    Number of threads
-  --mem MEM            Memory for cluster
-  --cluster            Use cluster
-  --queue QUEUE        Queue for cluster
-  --walltime WALLTIME  Walltime for cluster
-  --tmp TMP            Temporary folder
-  --input_vcf VCF      Phased VCF file to phase reads
+```text
+IG phase [--rhesus] [--sample SAMPLE] [--threads THREADS] [--mem MEM]
+         [--cluster] [--queue QUEUE] [--walltime WALLTIME] [--tmp TMP]
+         [--data-dir DATA_DIR] [--input_vcf VCF] BAM OUTDIR
 ```
-```
-IG assembly --help
-usage: IG assembly [-h] [--threads THREADS] [--mem MEM] [--cluster]
-                   [--queue QUEUE] [--walltime WALLTIME]
-                   OUTDIR
 
-positional arguments:
-  OUTDIR               Directory for output
+- `--sample SAMPLE`: sample name; default `sample`
+- `--threads THREADS`: worker threads; default `1`
+- `--mem MEM`: cluster memory request; default `20`
+- `--cluster`: submit work through the optional Watson-IG cluster package
+- `--queue QUEUE`: cluster queue; default `premium`
+- `--walltime WALLTIME`: cluster walltime; default `24`
+- `--tmp TMP`: temporary directory; default `<OUTDIR>/tmp`
+- `--data-dir DATA_DIR`: directory containing `reference.fasta`
+- `--input_vcf VCF`: use an existing phased VCF
+- `--rhesus`: use the bundled rhesus resources
 
-optional arguments:
-  -h, --help           show this help message and exit
-  --threads THREADS    Number of threads
-  --mem MEM            Memory for cluster
-  --cluster            Use cluster
-  --queue QUEUE        Queue for cluster
-  --walltime WALLTIME  Walltime for cluster
-```
-```
-IG detect --help
-usage: IG detect [-h] [--hom HOM] OUTDIR
+### `IG assembly`
 
-positional arguments:
-  OUTDIR      Directory for output
-
-optional arguments:
-  -h, --help  show this help message and exit
-  --hom HOM   Add homozygous reference genotype
+```text
+IG assembly [--rhesus] [--threads THREADS] [--mem MEM] [--cluster]
+            [--queue QUEUE] [--walltime WALLTIME] [--data-dir DATA_DIR]
+            OUTDIR
 ```
+
+Assembly contigs are aligned exclusively with minimap2's `asm20` preset.
+
+### `IG detect`
+
+```text
+IG detect [--rhesus] [--hom HOM] [--data-dir DATA_DIR] OUTDIR
+```
+
+### `IG alleles`
+
+```text
+IG alleles [--database DB] [--num_reads NUM_READS] [--data-dir DATA_DIR]
+           OUTDIR
+```
+
+Run `IG <command> --help` for the descriptions of every option.
 
 ## Explanation of steps
 ### Phase
-In the first step `--phase`, the subreads and CCS reads are phased and aligned to the IGH specific reference. Each read has a read group annotation. A read group annotation of 1 and 2 corresponds to haplotype 1 and 2. The read group annotation of 0 corresponds to unassignable reads. In IGV, you can seperate these reads by left clicking and selecting group by read group.
+In the `phase` step, CCS reads are aligned with minimap2 and phased. Read group
+annotations 1 and 2 correspond to haplotypes 1 and 2; read group 0 contains
+unassigned reads. In IGV, these can be viewed by grouping alignments by read
+group.
 
 ### Assemble
-In the second step `--assembly`, the haplotypes are assembled. During this process folders will be created for each region/haplotype block. Within each folder there is a bash script that runs the assembly process. These can be submitted as a single job into the cluster (this speeds up the process).
+In the `assembly` step, Canu assembles each haplotype block. A script and output
+directory are created for every region/haplotype block. With `--cluster`, these
+independent jobs can be submitted through the optional cluster integration.
 
 ### Detect
-In the third step `--detect`, SNVs, indels, SVs and gene/alleles are genotyped. A VCF file is created for the SNVs, a BED file for the indels and SVs, a TAB-delimited file for the gene/alleles calls.  
+In the `detect` step, SNVs, indels, structural variants, genes, and alleles are
+genotyped. SNVs are written as VCF, indels and structural variants as BED, and
+gene/allele calls as tab-delimited output.
 
 ## Output directories
 alignments  alleles  assembly  logs  plots  preprocessed  report.html  tmp  variants
@@ -160,7 +166,7 @@ alignments  alleles  assembly  logs  plots  preprocessed  report.html  tmp  vari
 ## Output files
 1. `alignments/`
     1. `ccs_to_ref*`: CCS reads aligned to reference
-    2. `contigs_to_ref*`: All assembled contigs aligned to refernece
+    2. `contigs_to_ref*`: All assembled contigs aligned to the reference
     3. `igh_contigs_to_ref*`: IGH assembled contigs aligned to igh reference
 2. `assembly/`
     1. `contigs.fasta`: All assembled contigs

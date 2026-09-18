@@ -139,7 +139,7 @@ def subset_alignments(alignments,edges):
 
 def get_contig_coords(alignments,path):
     if len(path) == 1:
-	return [[path[0],1,-1]]
+        return [[path[0],1,-1]]
     coords = []
     i = 0
     for start_contig, end_contig in zip(path,path[1:]):

@@ -1,0 +1,8 @@
+##fileformat=VCFv4.2
+##contig=<ID=igh,length=2000>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	simulated
+igh	500	.	T	A	60	PASS	.	GT	0/1
+igh	800	.	T	C	60	PASS	.	GT	0/1
+igh	1100	.	A	C	60	PASS	.	GT	0/1
+igh	1400	.	C	G	60	PASS	.	GT	0/1

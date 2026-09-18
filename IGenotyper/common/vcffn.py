@@ -9,12 +9,15 @@ class Variant:
         self.allele_bases = []
 
     def from_record_allele_bases(self,variant_record,sample_name):
-        alleles = variant_record.genotype(sample_name)['GT'].split("|")
-        alleles = map(int, alleles)
+        alleles = tuple(
+            int(allele) for allele in variant_record.genotype(sample_name)['GT'].split("|")
+        )
         allele_bases = [variant_record.REF]
         for alt_base in variant_record.ALT:
             allele_bases.append(alt_base)
-        self.allele_bases = map(lambda x: allele_bases[x], alleles)
+        # Every overlapping read needs to inspect these alleles. A Python 3
+        # map object would be exhausted after the first read.
+        self.allele_bases = tuple(allele_bases[index] for index in alleles)
 
     def from_record(self,variant_record,sample_name):
         self.chrom = variant_record.CHROM

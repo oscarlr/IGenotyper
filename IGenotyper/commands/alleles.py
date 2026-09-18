@@ -10,14 +10,16 @@ from IGenotyper.common.helper import extract_sequence
 def add_arguments(subparser):
     subparser.add_argument('--database', metavar='DB', help='Fasta DB with alleles')
     subparser.add_argument('--num_reads', metavar='NUM_READS',default=5,help='Number of reads to support allele call')
+    subparser.add_argument('--data-dir', help='Directory containing reference.fasta')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
 def run_alleles(
         database,
         num_reads,
-        outdir
+        outdir,
+        data_dir
 ):
-    files = FileManager(outdir)
+    files = FileManager(outdir,data_dir=data_dir)
 
     with open(files.input_args,'r') as fh:
         phasing_args = json.load(fh)

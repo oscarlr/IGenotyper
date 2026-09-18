@@ -2,9 +2,10 @@
 import os
 import json
 from IGenotyper.common.helper import create_folders,non_emptyfile,run_type
+from IGenotyper.common.reference import validate_reference
 
 class FileManager():
-    def __init__(self,outdir,bam=None,tmp = "tmp",rhesus=False):
+    def __init__(self,outdir,bam=None,tmp = "tmp",rhesus=False,data_dir=None):
         self.outdir = outdir
         self.input_bam = bam
         self.tmp = tmp
@@ -20,8 +21,10 @@ class FileManager():
                 phasing_args = json.load(fh)
             self.input_bam = phasing_args["bam"]
             self.tmp = phasing_args["tmp"]
+            if data_dir is None:
+                data_dir = phasing_args.get("data_dir")
 
-        self.file_structure()
+        self.file_structure(data_dir)
 
     def folder_structure(self):
         self.preprocess = "%s/preprocessed" % self.outdir
@@ -60,7 +63,7 @@ class FileManager():
 
         create_folders(folders)
 
-    def file_structure(self):
+    def file_structure(self, data_dir=None):
         #pacbio_machine = run_type(self.input_bam)
         pacbio_machine = "SEQUELII" 
         self.ccs_bam = self.input_bam #"%s/ccs.bam" % self.preprocess
@@ -69,21 +72,62 @@ class FileManager():
         self.ccs_fastq = "%s/ccs.fasta" % self.tmp
         self.ccs_fastq_unedited = "%s/ccs.fasta" % self.tmp
 
-        data_directory = "%s/data" % self.package_directory
+        package_data = "%s/data" % self.package_directory
+        self.reference_annotations = "%s/immune_receptor_genomics/251106" % package_data
 
         if self.rhesus:
-            data_directory = "%s/data/rhesus" % self.package_directory
-        
-        self.ref = "%s/reference.fasta" % data_directory
-        self.target_regions = "%s/target_regions.bed" % data_directory
-        self.sv_coords = "%s/sv_coords.bed" % data_directory
-        self.introns = "%s/introns.bed" % data_directory
-        self.lpart1 = "%s/lpart1.bed" % data_directory
-        self.rss = "%s/rss.bed" % data_directory
-        self.gene_coords = "%s/gene_coords.bed" % data_directory
-        self.constant_gene_coords = "%s/constant_gene_coords.bed" % data_directory
-        self.vdj_coords = "%s/vdj_coords.bed" % data_directory
-        self.allele_db = "%s/alleles.fasta" % data_directory
+            reference_data = "%s/rhesus" % package_data
+            compatibility_data = reference_data
+        else:
+            requested_data = data_dir or os.environ.get("IGENOTYPER_DATA_DIR")
+            default_data = os.path.join(
+                os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
+                "igenotyper",
+            )
+            reference_data = os.path.abspath(
+                os.path.expanduser(requested_data or default_data)
+            )
+            # Keep existing development checkouts working, while installed
+            # packages use the external user data directory by default.
+            legacy_reference = os.path.join(package_data, "reference.fasta")
+            if not requested_data and not os.path.isfile(
+                os.path.join(reference_data, "reference.fasta")
+            ) and os.path.isfile(legacy_reference):
+                reference_data = package_data
+            compatibility_data = package_data
+
+        self.data_directory = reference_data
+        self.ref = "%s/reference.fasta" % reference_data
+        self.minimap2_ref = (
+            "%s.mmi" % self.ref if non_emptyfile("%s.mmi" % self.ref) else self.ref
+        )
+        self.target_regions = "%s/target_regions.bed" % compatibility_data
+        self.sv_coords = "%s/sv_coords.bed" % compatibility_data
+        self.lpart1 = "%s/lpart1.bed" % compatibility_data
+        self.rss = "%s/rss.bed" % compatibility_data
+        self.vdj_coords = "%s/vdj_coords.bed" % compatibility_data
+        self.allele_db = "%s/alleles.fasta" % compatibility_data
+
+        # These tracks are versioned with the current reference FASTA.
+        self.introns = "%s/intron.bed" % self.reference_annotations
+        self.gene_coords = "%s/gene.bed" % self.reference_annotations
+        self.constant_gene_coords = "%s/constant.bed" % self.reference_annotations
+
+        if not self.rhesus:
+            validate_reference(
+                self.ref,
+                "%s/reference.fasta.fai" % self.reference_annotations,
+                [
+                    self.target_regions,
+                    self.sv_coords,
+                    self.introns,
+                    self.lpart1,
+                    self.rss,
+                    self.gene_coords,
+                    self.constant_gene_coords,
+                    self.vdj_coords,
+                ],
+            )
 
         self.subreads_to_ref = "%s/subreads_to_ref.sorted.bam" % self.preprocess
         self.subreads_to_ref_phased = "%s/subreads_to_ref_phased.sorted.bam" % self.alignments
@@ -114,7 +158,7 @@ class FileManager():
         self.igh_assembly_to_ref_subs_phased = "%s/igh_contigs_to_ref_subs_phased.sorted.bam" % self.alignments
 
         self.phased_blocks = "%s/phased_blocks.txt" % self.variants
-        self.chr_lengths = "%s/chr_lengths.txt" % data_directory
+        self.chr_lengths = "%s/chr_lengths.txt" % compatibility_data
         self.input_args = "%s/args.json" % self.log
         self.assembly_script = "%s/data/assembly.sh" % self.package_directory
 

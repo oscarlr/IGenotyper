@@ -1,21 +1,18 @@
-#!/bin/env python
-import distutils.spawn
+#!/usr/bin/env python3
+import shutil
 
-def check_tools():
-    tools = [
-        "ccs",
-        "bam2fastq",
-        "blasr",
-        "samtools"
-    ]
-
-    tools = []
-    
-    missing_tools = []
-
-    for tool in tools:
-        tool_path = distutils.spawn.find_executable(tool)
-        if tool_path == None:
-            missing_tools.append(tool)
-
-    return missing_tools
+def check_tools(command_name):
+    tools_by_command = {
+        "phase": [
+            "bamCoverage",
+            "minimap2",
+            "Rscript",
+            "samtools",
+            "whatshap",
+        ],
+        "assembly": ["canu", "minimap2", "samtools"],
+        "detect": ["kalign"],
+        "alleles": [],
+    }
+    tools = tools_by_command.get(command_name, [])
+    return [tool for tool in tools if shutil.which(tool) is None]

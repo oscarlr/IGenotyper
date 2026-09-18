@@ -25,6 +25,7 @@ def add_arguments(subparser):
     subparser.add_argument('--cluster', default=False, action='store_true', help='Use cluster')
     subparser.add_argument('--queue', metavar='QUEUE', default="premium", help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME', default=2, help='Walltime for cluster')
+    subparser.add_argument('--data-dir', help='Directory containing reference.fasta')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
 def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None):
@@ -61,9 +62,10 @@ def run_assembly(
         cluster,
         queue,
         walltime,
-        outdir
+        outdir,
+        data_dir
 ):
-    files = FileManager(outdir,rhesus=rhesus)
+    files = FileManager(outdir,rhesus=rhesus,data_dir=data_dir)
 
     with open(files.input_args,'r') as fh:
         phasing_args = json.load(fh)

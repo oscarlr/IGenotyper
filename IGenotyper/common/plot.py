@@ -1,8 +1,8 @@
 #!/bin/env python
 import pandas
-#import matplotlib
-#matplotlib.use('Agg')
-#from matplotlib import pyplot
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot
 
 def plot_histogram(vals,title,plotfn):
     values = pandas.Series(vals)
@@ -21,8 +21,8 @@ def plot_barplot(xvals,yvals,xlab,ylab,plotfn):
     axes = fig.add_axes([0,0,1,1])
     axes.bar(xvals,yvals)
     fig   = pyplot.gcf()
-    axes.set_xlabel(title)
-    axes.set_ylabel('Count')
+    axes.set_xlabel(xlab)
+    axes.set_ylabel(ylab)
     axes.xaxis.grid(False)
     axes.yaxis.grid(False)
     _, max_ = pyplot.ylim()

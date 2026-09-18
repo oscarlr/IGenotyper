@@ -1,7 +1,5 @@
-#!/bin/env python
-import os
-from lsf.lsf import Lsf
-from IGenotyper.common.helper import non_emptyfile
+#!/usr/bin/env python3
+from shlex import quote
 
 from IGenotyper.command_lines.clt import CommandLine
 
@@ -27,12 +25,14 @@ class ReadManip(CommandLine):
         output_file = "%s.bai" % self.files.ccs_bam
         self.run_command(command,output_file)
 
-     def turn_ccs_reads_to_fastq(self):
-         args = [self.files.ccs_fastq_unedited,
-                 self.files.ccs_bam,
-                 self.files.ccs_fastq_unedited,
-                 self.files.ccs_fastq]
-         command = ("bam2fasta "
-                    "-o %s %s\n"
-                    "zcat %s.fasta.gz | sed 's/ccs/0_8/g' | sed 's/\/fwd//g' | sed 's/\/rev//g' > %s\n" % tuple(args))
-         self.run_command(command,self.files.ccs_fastq)
+    def turn_ccs_reads_to_fastq(self):
+        command = (
+            "set -o pipefail; samtools fasta -@ %s %s | "
+            "sed 's|/ccs|/0_8|g; s|/fwd||g; s|/rev||g' > %s"
+            % (
+                int(self.cpu.threads),
+                quote(self.files.ccs_bam),
+                quote(self.files.ccs_fastq),
+            )
+        )
+        self.run_command(command, self.files.ccs_fastq)

@@ -16,11 +16,31 @@
 ```bash
 git clone https://github.com/oscarlr/IGenotyper.git
 cd IGenotyper
-conda env create -f environment.yml
+CONDA_SAFETY_CHECKS=enabled conda env create -f environment.yml
 conda activate igenotyper
 python -m pip install .
 ./scripts/fetch_reference.sh
+```
 
+Conda safety checks stop installation if cached package files are damaged.
+If Conda reports a `SafetyError`, retry with a fresh package cache rather than
+disabling the checks:
+
+```bash
+CONDA_PKGS_DIRS="$(mktemp -d "${TMPDIR:-/tmp}/igenotyper-conda.XXXXXX")" \
+  CONDA_SAFETY_CHECKS=enabled conda env create -f environment.yml
+```
+
+On shared filesystems, creating the environment can take several minutes after
+downloads finish. Wait for Conda to finish before installing the Python package
+or running the tests below.
+
+### Optional LSF integration
+
+The `--cluster` assembly backend uses LSF and requires access to the separate
+`Watson-IG/cluster` repository. Skip this section for local execution or Slurm.
+
+```bash
 cd ..
 git clone https://github.com/Watson-IG/cluster.git
 cd cluster
@@ -28,7 +48,16 @@ python -m pip install .
 export SJOB_DEFALLOC=NONE
 ```
 
-The `Watson-IG/cluster` package is needed only when using `--cluster`.
+### Slurm
+
+On Slurm, request a compute allocation and run IGenotyper without `--cluster`.
+For example, using your site's partition name and resource limits:
+
+```bash
+conda activate igenotyper
+srun --partition=compute --cpus-per-task=8 --mem=24G --time=02:00:00 \
+  IG phase --sample SAMPLE --threads 8 reads.bam output
+```
 
 ## Reference data
 

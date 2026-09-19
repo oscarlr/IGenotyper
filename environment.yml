@@ -14,6 +14,7 @@ dependencies:
   - kalign>=3.4
   - deeptools>=3.5
   - pygenometracks>=3.9
+  - pytest  # Required by pyGenomeTracks package metadata.
   - biopython>=1.83
   - pysam>=0.22
   - pybedtools>=0.10

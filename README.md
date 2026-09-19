@@ -55,7 +55,7 @@ For example, using your site's partition name and resource limits:
 
 ```bash
 conda activate igenotyper
-srun --partition=compute --cpus-per-task=8 --mem=24G --time=02:00:00 \
+srun --partition=compute --ntasks=1 --cpus-per-task=8 --mem=24G --time=02:00:00 \
   IG phase --sample SAMPLE --threads 8 reads.bam output
 ```
 

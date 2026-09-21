@@ -328,3 +328,69 @@ def test_dispatch_changes_invalidate_completed_output(tmp_path, stub_tools):
              for name, args in stub_tools() if name == 'canu']
     assert modes == ['-pacbio-hifi', '-pacbio']
     combine_assembly_sequences(files, [COVERED])
+
+
+def rewrite_input_groups(files, header_ids, read_id):
+    path = files.input_bam
+    with pysam.AlignmentFile(path, 'rb') as source:
+        header, reads = source.header.to_dict(), list(source)
+    header['RG'] = [dict(header['RG'][0], ID=value) for value in header_ids]
+    temporary = path + '.tmp'
+    with pysam.AlignmentFile(temporary, 'wb', header=header) as out:
+        for read in reads:
+            read.set_tag('RG', read_id)
+            out.write(read)
+    os.replace(temporary, path)
+    pysam.index(path)
+
+
+def test_barcode_parent_metadata_dispatch_and_collection(tmp_path, stub_tools, caplog):
+    files = make_files(tmp_path, qualities=(0.999, 0.999))
+    rewrite_input_groups(files, ['b5706d50'], 'b5706d50/0--0')
+    assert select_assembly_workflow(files.input_bam).name == 'hifi'
+    assert sum('using metadata from barcode parent' in r.message for r in caplog.records) == 1
+    execute(files, [COVERED])
+    combine_assembly_sequences(files, [COVERED])
+    assert len(list(SeqIO.parse(files.assembly_fasta, 'fasta'))) == 1
+    with pysam.AlignmentFile(files.input_bam, 'rb') as bam:
+        assert all(read.get_tag('RG') == 'b5706d50/0--0' for read in bam)
+
+
+def test_exact_barcode_group_takes_precedence():
+    from IGenotyper.assembly.workflow import resolve_read_group
+    groups = {'b5706d50': None, 'b5706d50/0--0': 'CCS'}
+    assert resolve_read_group('b5706d50/0--0', groups) == 'b5706d50/0--0'
+
+
+@pytest.mark.parametrize('read_id', ['deadbeef/0--0', 'b5706d50/not-a-barcode', 'b5706d50/0--0/extra'])
+def test_invalid_barcode_groups_remain_errors(tmp_path, read_id):
+    files = make_files(tmp_path)
+    rewrite_input_groups(files, ['b5706d50'], read_id)
+    with pytest.raises(ValueError, match='unknown RG'):
+        select_assembly_workflow(files.input_bam)
+
+
+def test_duplicate_parent_groups_are_rejected(tmp_path):
+    files = make_files(tmp_path)
+    rewrite_input_groups(files, ['b5706d50', 'b5706d50'], 'b5706d50/0--0')
+    with pytest.raises(ValueError, match='Duplicate @RG'):
+        select_assembly_workflow(files.input_bam)
+
+
+def test_one_6447_base_read_is_not_treated_as_no_coverage(tmp_path, stub_tools, monkeypatch):
+    files = make_files(tmp_path, qualities=(0.999,))
+    path = files.ccs_to_ref_phased
+    with pysam.AlignmentFile(path, 'rb') as source:
+        header, read = source.header, next(source)
+    read.query_sequence = 'A' * 6447
+    read.cigarstring = '6447M'
+    with pysam.AlignmentFile(path, 'wb', header=header) as out:
+        out.write(read)
+    pysam.index(path)
+    monkeypatch.setenv('IG_TEST_CANU', 'failure')
+    with pytest.raises(subprocess.CalledProcessError):
+        execute(files, [COVERED])
+    root = directory(files, COVERED)
+    assert len(next(SeqIO.parse(root / 'reads.fasta', 'fasta'))) == 6447
+    assert not (root / 'skipped.json').exists()
+    assert not (root / 'done').exists()

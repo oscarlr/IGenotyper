@@ -107,6 +107,11 @@ The quality cutoff follows the [PacBio BAM specification](https://pacbiofileform
 lower `rq` is not evidence for HiFi; the correction route is the conservative
 choice, consistent with [Canu's input modes](https://canu.readthedocs.io/en/latest/tutorial.html).
 Ambiguous/unsupported or mixed CCS/SUBREAD inputs fail with an actionable message.
+For incomplete demultiplexed headers, an undeclared `8-hex-ID/forward--reverse`
+read group may use metadata from its explicitly declared unsuffixed parent. Exact
+header matches take precedence. This recovery logs a warning once per recovered
+ID and changes neither RG tags nor QNAMEs. Unknown parents, malformed suffixes,
+and duplicate header IDs remain errors; this does not repair the BAM itself.
 Instrument model alone does not choose a workflow. Base qualities and pass counts
 are not substituted for `rq`.
 

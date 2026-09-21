@@ -1,9 +1,26 @@
 """Choose assembly from biological read type and accuracy, not instrument model."""
 from dataclasses import dataclass
+import logging
 import math
 import re
 
 import pysam
+
+
+logger = logging.getLogger(__name__)
+
+
+def resolve_read_group(group_id, groups):
+    """Prefer exact IDs; narrowly tolerate a missing barcode-specific header.
+
+    This recovers metadata only. It never changes BAM RG tags or read names.
+    """
+    if group_id in groups:
+        return group_id
+    match = re.fullmatch(r"([0-9a-fA-F]{8})/[0-9]+--[0-9]+", group_id)
+    if match and match.group(1) in groups:
+        return match.group(1)
+    raise ValueError("Read refers to unknown RG %s; supply the matching @RG header" % group_id)
 
 
 @dataclass(frozen=True)
@@ -40,20 +57,28 @@ def select_assembly_workflow(path):
                 read_type = 'CCS'
             if read_type not in (None, 'CCS', 'SUBREAD'):
                 raise ValueError('Unsupported READTYPE=%s in %s; supply CCS or SUBREAD input' % (read_type, path))
+            if group['ID'] in types:
+                raise ValueError('Duplicate @RG ID %s in %s' % (group['ID'], path))
             types[group['ID']] = read_type
         declared = {value for value in types.values() if value is not None}
         if len(declared) > 1:
             raise ValueError('Mixed CCS/SUBREAD BAM; split read types before assembly: %s' % path)
         observed = set()
         count, all_hifi = 0, True
+        recovered_groups = set()
         for read in bam.fetch(until_eof=True):
             if read.flag & 0x900 or not read.query_sequence:
                 continue
             if read.has_tag('RG'):
                 group_id = read.get_tag('RG')
-                if group_id not in types:
-                    raise ValueError('Read refers to unknown RG %s in %s' % (group_id, path))
-                read_type = types[group_id]
+                try:
+                    header_id = resolve_read_group(group_id, types)
+                except ValueError as error:
+                    raise ValueError('%s in %s' % (error, path)) from error
+                if header_id != group_id and group_id not in recovered_groups:
+                    logger.warning('BAM %s lacks @RG ID %s; using metadata from barcode parent %s without changing read identities', path, group_id, header_id)
+                    recovered_groups.add(group_id)
+                read_type = types[header_id]
             else:
                 read_type = next(iter(declared)) if len(declared) == 1 else None
             if read_type is None:

@@ -12,6 +12,7 @@ import pytest
 import pyBigWig
 
 from IGenotyper.assembly.scripts import assembly_contigs, create_assemble_script, region_assembled
+from IGenotyper.assembly.workflow import select_assembly_workflow
 from IGenotyper.commands.assembly import combine_sequence, combine_assembly_sequences
 from IGenotyper.command_lines.assembly import Assembly
 from IGenotyper.command_lines.alignments import Align
@@ -23,10 +24,10 @@ from IGenotyper.common.validation import require_usable_reads, validate_vcf
 CPU = SimpleNamespace(threads=1, cluster=False)
 
 
-def write_bam(path, platform='REVIO', reads=(), chroms=('chr1', 'igh')):
+def write_bam(path, platform='REVIO', reads=(), chroms=('chr1', 'igh'), read_type='CCS'):
     header = {'HD': {'VN': '1.6', 'SO': 'coordinate'},
               'SQ': [{'SN': c, 'LN': 400} for c in chroms],
-              'RG': [{'ID': 'rg', 'SM': 'sample', 'PM': platform}]}
+              'RG': [{'ID': 'rg', 'SM': 'sample', 'PM': platform, 'DS': 'READTYPE=' + read_type}]}
     with pysam.AlignmentFile(str(path), 'wb', header=header) as stream:
         for tid, name, alt, flag in reads:
             read = pysam.AlignedSegment()
@@ -42,23 +43,33 @@ def write_bam(path, platform='REVIO', reads=(), chroms=('chr1', 'igh')):
             read.cigarstring = '200M'
             read.query_qualities = pysam.qualitystring_to_array('I' * 200)
             read.set_tag('RG', 'rg')
+            read.set_tag('rq', 0.999)
             stream.write(read)
     pysam.index(str(path))
     return str(path)
 
 
 def files_for(tmp_path, platform='REVIO'):
-    bam = write_bam(tmp_path / 'input.bam', platform)
+    bam = write_bam(tmp_path / 'input.bam', platform, reads=[(0, 'movie/1/ccs', False, 0)])
+    phased = str(tmp_path / 'phased.bam')
+    with pysam.AlignmentFile(bam, 'rb') as source:
+        header = source.header.to_dict()
+        header['RG'] = [dict(header['RG'][0], ID=hap) for hap in ['0', '1', '2']]
+        with pysam.AlignmentFile(phased, 'wb', header=header) as out:
+            for read in source:
+                read.set_tag('RG', '1')
+                out.write(read)
+    pysam.index(phased)
     return SimpleNamespace(tmp=str(tmp_path), input_bam=bam, ccs_bam=bam,
-        ccs_fastq=str(tmp_path / 'reads.fasta'), ccs_to_ref_phased=bam,
-        subreads_to_ref_phased=bam, scripts=str(Path('IGenotyper/scripts').resolve()),
+        ccs_fastq=str(tmp_path / 'reads.fasta'), ccs_to_ref_phased=phased,
+        subreads_to_ref_phased=phased, scripts=str(Path('IGenotyper/scripts').resolve()),
         assembly_script=str(Path('IGenotyper/data/assembly.sh').resolve()),
         assembly_fasta=str(tmp_path / 'assembly.fasta'),
         igh_assembly_fasta=str(tmp_path / 'igh.fasta'))
 
 
 @pytest.mark.parametrize('platform,relative,mode', [
-    ('SEQUEL', 'contigs.fasta', '-pacbio'),
+    ('SEQUEL', 'canu/canu.contigs.fasta', '-pacbio-hifi'),
     ('SEQUELII', 'canu/canu.contigs.fasta', '-pacbio-hifi'),
     ('REVIO', 'canu/canu.contigs.fasta', '-pacbio-hifi')])
 def test_platform_execution_and_collection(tmp_path, platform, relative, mode):
@@ -71,20 +82,17 @@ def test_platform_execution_and_collection(tmp_path, platform, relative, mode):
     canu = bindir / 'canu'
     canu.write_text('#!/bin/bash\nset -e\n' +
         'printf "%s\\n" "$@" > ' + str(tmp_path / 'canu.args') + '\n' +
-        'mkdir -p ' + str(region / 'canu') + '\n' +
-        "printf '>canu\\nACGT\\n' > " + str(region / 'canu/canu.contigs.fasta') + '\n')
+        'while [ "$1" != -d ]; do shift; done; shift; mkdir -p "$1"\n' +
+        "printf '>canu\\nACGT\\n' > \"$1/canu.contigs.fasta\"\n")
     canu.chmod(0o755)
-    # Existing valid polishing output is preserved for SEQUEL.
-    if platform == 'SEQUEL':
-        (region / relative).write_text('>polished\nTGCA\n')
     script = create_assemble_script(files, CPU, str(region), 'chr1', 0, 200, '1')
     env = dict(os.environ, PATH=str(bindir) + os.pathsep + str(Path(sys.executable).parent) + os.pathsep + os.environ['PATH'])
     subprocess.run(['bash', script], check=True, env=env)
     assert mode in (tmp_path / 'canu.args').read_text().splitlines()
-    assert assembly_contigs(str(region), platform) == str(region / relative)
-    assert region_assembled(str(region), platform)
+    assert assembly_contigs(str(region), select_assembly_workflow(files.input_bam)) == str(region / relative)
+    assert region_assembled(str(region), select_assembly_workflow(files.input_bam))
     combine_assembly_sequences(files, [('chr1', 0, 200, '1')])
-    assert ('TGCA' if platform == 'SEQUEL' else 'ACGT') in Path(files.assembly_fasta).read_text()
+    assert 'ACGT' in Path(files.assembly_fasta).read_text()
     assert not Path(files.igh_assembly_fasta).exists()
 
 
@@ -96,7 +104,7 @@ def test_missing_assembly_preserves_previous_output(tmp_path, content):
     if content is not None:
         (region / 'canu/canu.contigs.fasta').write_text(content)
     Path(files.assembly_fasta).write_text('>previous\nACTG\n')
-    assert not region_assembled(str(region), 'REVIO')
+    assert not region_assembled(str(region), select_assembly_workflow(files.input_bam))
     with pytest.raises(RuntimeError, match='assembly FASTA'):
         combine_sequence(files, [('igh', 0, 200, '1')], files.assembly_fasta, 'fasta')
     assert Path(files.assembly_fasta).read_text() == '>previous\nACTG\n'
@@ -112,7 +120,7 @@ def test_failed_assembly_never_writes_done(tmp_path, exit_code):
     (region / 'done').touch()
     bindir = tmp_path / 'bin'; bindir.mkdir()
     canu = bindir / 'canu'; canu.write_text('#!/bin/bash\nexit %s\n' % exit_code); canu.chmod(0o755)
-    script = create_assemble_script(files, CPU, str(region), 'igh', 0, 200, '1')
+    script = create_assemble_script(files, CPU, str(region), 'chr1', 0, 200, '1')
     with patch.dict(os.environ, PATH=str(bindir) + os.pathsep + os.environ['PATH']):
         with pytest.raises(subprocess.CalledProcessError):
             Assembly(files, CPU, 'sample').run_assembly_scripts([script])
@@ -378,13 +386,13 @@ def test_phasing_preserves_original_names_and_invalidates_old_bam(tmp_path):
 
 
 def test_stale_region_is_archived_after_phasing_changes(tmp_path):
-    from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_provenance, record_assembly_success
+    from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_provenance, record_assembly_success, region_provenance
     import json
     files = files_for(tmp_path)
     directory = tmp_path / 'assembly/igh/0_200/1'
     (directory / 'canu').mkdir(parents=True)
     (directory / 'canu/canu.contigs.fasta').write_text('>old\nACGT\n')
-    record_assembly_success(str(directory), "REVIO", assembly_provenance(files, "REVIO"))
+    record_assembly_success(str(directory), select_assembly_workflow(files.input_bam), region_provenance(assembly_provenance(files, select_assembly_workflow(files.input_bam)), "igh", 0, 200, "1"))
     assert get_assembly_scripts(files, CPU, [('igh', 0, 200, '1')]) == []
     write_bam(Path(files.ccs_to_ref_phased), reads=[(0, 'new/fwd', False, 0)])
     assert len(get_assembly_scripts(files, CPU, [('igh', 0, 200, '1')])) == 1

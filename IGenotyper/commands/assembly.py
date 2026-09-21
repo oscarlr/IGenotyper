@@ -3,13 +3,13 @@ import os
 import json
 import tempfile
 import filecmp
-import pybedtools
+import uuid
 from Bio import SeqIO
 
 from IGenotyper.files import FileManager
 
 from IGenotyper.common.cpu import CpuManager
-from IGenotyper.common.helper import non_emptyfile,get_phased_blocks,run_type
+from IGenotyper.common.helper import get_phased_blocks
 
 from IGenotyper.command_lines.assembly import Assembly
 from IGenotyper.command_lines.alignments import Align
@@ -17,7 +17,8 @@ from IGenotyper.command_lines.alignments import Align
 
 from IGenotyper.phasing.reads import phase_assembly
 
-from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_contigs, assembly_provenance, region_assembled
+from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_contigs, assembly_provenance, region_status, region_provenance
+from IGenotyper.assembly.workflow import select_assembly_workflow
 from IGenotyper.common.validation import fasta_records
 #from IGenotyper.assembly.merge_assembly import merge_assembly
 
@@ -31,22 +32,33 @@ def add_arguments(subparser):
     subparser.add_argument('--data-dir', help='Directory containing reference.fasta')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
-def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None):
+def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None,workflow=None,allow_empty=False):
     seqs = []
-    platform = run_type(files.input_bam)
+    workflow = workflow or select_assembly_workflow(files.input_bam)
+    provenance = assembly_provenance(files, workflow)
     selected = [block for block in phased_blocks if chrom_select is None or block[0] == chrom_select]
     if not selected:
         raise RuntimeError("No assembly regions selected for %s" % outfile)
     for chrom, start, end, hap in selected:
         directory = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
-        contig = assembly_contigs(directory, platform, type_)
+        status = region_status(directory, workflow, region_provenance(provenance, chrom, start, end, hap))
+        if status == "skipped_no_coverage":
+            continue
+        contig = assembly_contigs(directory, workflow, type_)
         contigs = fasta_records(contig)
-        if not region_assembled(directory, platform, assembly_provenance(files, platform)):
+        if status != "assembled":
             raise RuntimeError("Assembly region has no valid completion record: %s" % directory)
         for i, record in enumerate(contigs):
             record.id = "c=%s:%s-%s_h=%s_i=%s_t=%s_/0/0_0" % (chrom, start, end, hap, i, len(contigs))
             record.description = ""
             seqs.append(record)
+    if not seqs:
+        if allow_empty:
+            # Optional chromosome subset: do not leave a stale FASTA at its path.
+            if os.path.exists(outfile):
+                os.replace(outfile, outfile + '.previous-' + uuid.uuid4().hex)
+            return 0
+        raise RuntimeError("No valid contigs overall: all selected assembly regions have no coverage (%s)" % outfile)
     fd, temporary = tempfile.mkstemp(dir=os.path.dirname(outfile) or ".", suffix=".fasta")
     try:
         with os.fdopen(fd, "w") as stream:
@@ -56,11 +68,13 @@ def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None):
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
+    return len(seqs)
 
-def combine_assembly_sequences(files,phased_blocks):
-    combine_sequence(files,phased_blocks,files.assembly_fasta,"fasta")
+def combine_assembly_sequences(files,phased_blocks,workflow=None):
+    workflow = workflow or select_assembly_workflow(files.input_bam)
+    combine_sequence(files,phased_blocks,files.assembly_fasta,"fasta",workflow=workflow)
     if any(block[0] == "igh" for block in phased_blocks):
-        combine_sequence(files,phased_blocks,files.igh_assembly_fasta,"fasta","igh")
+        combine_sequence(files,phased_blocks,files.igh_assembly_fasta,"fasta","igh",workflow=workflow,allow_empty=True)
     #combine_sequence(files,phased_blocks,files.assembly_fastq,"fastq")
 
 def run_assembly(
@@ -88,10 +102,11 @@ def run_assembly(
     phased_blocks = get_phased_blocks(files,files.phased_blocks)    
     
     #if not non_emptyfile(files.assembly_fastq): # CHANGED to GET CONSTANT
-    assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
+    workflow = select_assembly_workflow(files.input_bam)
+    assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks,workflow)
     assembly_command_line.run_assembly_scripts(assembly_scripts)
     
-    combine_assembly_sequences(files,phased_blocks)
+    combine_assembly_sequences(files,phased_blocks,workflow)
     align_command_line.map_assembly()
     phase_assembly(files,sample)
 

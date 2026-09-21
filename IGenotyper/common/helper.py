@@ -268,6 +268,8 @@ def add_haplotype_to_blocks(phased_blocks,regions,haplotype):
     return phased_blocks
 
 def get_phased_blocks(files,phased_blocks_source):
+    # Targets without phase blocks may also lack reads. Keep them in the plan;
+    # assembly extraction records no-coverage skips after validating the BAM.
     phased_blocks = []
     target_regions = pybedtools.BedTool(files.target_regions)
     phased_regions = target_regions.intersect(pybedtools.BedTool(get_phased_regions(phased_blocks_source)))

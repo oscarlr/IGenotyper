@@ -4,78 +4,119 @@ import json
 import hashlib
 import uuid
 import tempfile
+import sys
+from dataclasses import asdict
 from pathlib import Path
 from shlex import quote
 
-from IGenotyper.common.helper import create_directory, run_type
+import pysam
+
+from IGenotyper.common.helper import create_directory
 from IGenotyper.common.validation import fasta_records
 from IGenotyper.command_lines.clt import signatures
+from IGenotyper.assembly.workflow import select_assembly_workflow
 
 
-def assembly_contigs(directory, platform, filetype='fasta'):
-    if platform in ('SEQUELII', 'REVIO'):
-        return '%s/canu/canu.contigs.%s' % (directory, filetype)
-    if platform == 'SEQUEL':
-        return '%s/contigs.%s' % (directory, filetype)
-    raise ValueError('Unsupported PacBio platform: %s' % platform)
+def assembly_contigs(directory, workflow, filetype='fasta'):
+    relative = 'contigs' if workflow.polish else 'canu/canu.contigs'
+    return '%s/%s.%s' % (directory, relative, filetype)
 
 
-def assembly_provenance(files, platform):
-    inputs = [files.ccs_to_ref_phased]
-    if platform == 'SEQUEL':
-        inputs += [files.subreads_to_ref_phased, files.input_bam]
-    return {'schema': 1, 'platform': platform, 'inputs': signatures(inputs),
-            'script': hashlib.sha256(Path(files.assembly_script).read_bytes()).hexdigest()}
+def assembly_bam(files, workflow):
+    return files.subreads_to_ref_phased if workflow.polish else files.ccs_to_ref_phased
 
 
-def region_assembled(directory, platform, provenance=None):
-    if not os.path.isfile('%s/done' % directory):
-        return False
+def assembly_provenance(files, workflow):
+    source = assembly_bam(files, workflow)
+    if not os.path.isfile(source):
+        requirement = 'phased subreads BAM (run subread mapping/phasing first)' if workflow.polish else 'phased CCS BAM (run phase first)'
+        raise ValueError('%s workflow requires %s: %s' % (workflow.name, requirement, source))
+    indexes = [source + '.bai', str(Path(source).with_suffix('.bai')), source + '.csi', str(Path(source).with_suffix('.csi'))]
+    indexes = list(dict.fromkeys(path for path in indexes if os.path.isfile(path)))
+    if not indexes:
+        raise ValueError('Missing index for assembly BAM; run samtools index %s' % source)
+    with pysam.AlignmentFile(source, 'rb') as bam:
+        bam.check_index()
+    inputs = list(dict.fromkeys([files.input_bam, source] + indexes))
+    code = [Path(files.assembly_script), Path(__file__), Path(__file__).with_name('regions.py'), Path(__file__).with_name('workflow.py')]
+    return {'schema': 2, 'workflow': json.loads(json.dumps(asdict(workflow))),
+            'inputs': signatures(inputs),
+            'script': hashlib.sha256(b''.join(path.read_bytes() for path in code)).hexdigest()}
+
+
+def region_provenance(provenance, chrom, start, end, hap):
+    return dict(provenance, region=[chrom, int(start), int(end), str(hap)], flank=1000)
+
+
+def region_status(directory, workflow, provenance=None):
+    """Only completed assembly or a checked no-coverage receipt is reusable."""
     try:
-        fasta_records(assembly_contigs(directory, platform))
-    except RuntimeError:
-        return False
-    try:
-        state = json.loads(Path(directory, "done").read_text())
-        if state.get('outputs') != signatures([assembly_contigs(directory, platform)]):
-            return False
-        if provenance is not None and state != dict(provenance, outputs=state['outputs']):
-            return False
-    except (OSError, ValueError, AttributeError):
-        return False
-    return True
+        # A skip takes precedence over any old contigs/done file in this directory.
+        skip = Path(directory, 'skipped.json')
+        state = json.loads((skip if skip.exists() else Path(directory, 'done')).read_text())
+        status = 'skipped_no_coverage' if skip.exists() else 'assembled'
+        if state.get('status') != status:
+            return None
+        outputs = {} if skip.exists() else signatures([assembly_contigs(directory, workflow)])
+        if state.get('outputs') != outputs:
+            return None
+        if provenance is not None and state != dict(provenance, status=status, outputs=outputs):
+            return None
+        if not skip.exists():
+            fasta_records(assembly_contigs(directory, workflow))
+        return status
+    except (OSError, ValueError, RuntimeError, AttributeError):
+        return None
 
 
-def record_assembly_success(directory, platform, provenance):
-    contigs = assembly_contigs(directory, platform)
-    fasta_records(contigs)
-    fd, temporary = tempfile.mkstemp(prefix='.done-', dir=directory)
+def region_assembled(directory, workflow, provenance=None):
+    return region_status(directory, workflow, provenance) == 'assembled'
+
+
+def validate_assembly_inputs(provenance):
+    if signatures(provenance['inputs']) != provenance['inputs']:
+        raise RuntimeError('Assembly inputs changed during execution; rerun assembly')
+
+
+def record_region_result(directory, provenance, status, contigs=None):
+    validate_assembly_inputs(provenance)
+    if status == 'assembled':
+        fasta_records(contigs)
+        outputs, marker, other = signatures([contigs]), 'done', 'skipped.json'
+    elif status == 'skipped_no_coverage':
+        reads = Path(directory, 'reads.fasta')
+        if not reads.is_file() or reads.stat().st_size != 0:
+            raise RuntimeError('Cannot record no coverage without a validated empty extraction')
+        outputs, marker, other = {}, 'skipped.json', 'done'
+    else:
+        raise ValueError('Unknown assembly status: %s' % status)
+    fd, temporary = tempfile.mkstemp(prefix='.status-', dir=directory)
     try:
         with os.fdopen(fd, 'w') as stream:
-            json.dump(dict(provenance, outputs=signatures([contigs])), stream)
-        os.replace(temporary, os.path.join(directory, 'done'))
+            json.dump(dict(provenance, status=status, outputs=outputs), stream)
+        Path(directory, other).unlink(missing_ok=True)
+        os.replace(temporary, os.path.join(directory, marker))
     finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+        Path(temporary).unlink(missing_ok=True)
 
 
-def create_assemble_script(files, cpu, directory, chrom, start, end, hap):
-    platform = run_type(files.input_bam)
-    contigs = assembly_contigs(directory, platform)
-    flank = 1000
+def record_assembly_success(directory, workflow, provenance):
+    record_region_result(directory, provenance, 'assembled', assembly_contigs(directory, workflow))
+
+
+def create_assemble_script(files, cpu, directory, chrom, start, end, hap, workflow=None, provenance=None):
+    workflow = workflow or select_assembly_workflow(files.input_bam)
+    provenance = region_provenance(provenance or assembly_provenance(files, workflow), chrom, start, end, hap)
     params = {
-        'hap': hap,
-        'ccs_to_ref': files.ccs_to_ref_phased,
-        'region': '%s:%s-%s' % (chrom, max(1, int(start) - flank + 1), int(end) + flank),
-        'output': directory,
-        'threads': int(cpu.threads),
-        'size': int(end) - int(start) + 2 * flank,
-        'subreads': files.input_bam,
-        'subreads_to_ref': files.subreads_to_ref_phased,
-        'python_scripts': files.scripts,
-        'pacbio_machine': platform,
-        'contigs': contigs,
-        'completion': json.dumps(assembly_provenance(files, platform)),
+        'hap': hap, 'assembly_bam': assembly_bam(files, workflow),
+        'chrom': chrom, 'start': int(start), 'end': int(end),
+        'region': '%s:%s-%s' % (chrom, max(1, int(start) - 1000 + 1), int(end) + 1000),
+        'output': directory, 'threads': int(cpu.threads),
+        'size': int(end) - int(start) + 2000,
+        'subreads': files.input_bam, 'python_scripts': files.scripts,
+        'data_setting': workflow.canu_flag, 'polish': int(workflow.polish),
+        'contigs': assembly_contigs(directory, workflow),
+        'completion': json.dumps(provenance), 'python': sys.executable,
     }
     bashfile = '%s/assemble.sh' % directory
     with open(bashfile, 'w') as stream:
@@ -86,17 +127,18 @@ def create_assemble_script(files, cpu, directory, chrom, start, end, hap):
     return bashfile
 
 
-def get_assembly_scripts(files, cpu, phased_blocks):
+def get_assembly_scripts(files, cpu, phased_blocks, workflow=None):
     assembly_scripts = []
-    platform = run_type(files.input_bam)
-    provenance = assembly_provenance(files, platform)
+    workflow = workflow or select_assembly_workflow(files.input_bam)
+    provenance = assembly_provenance(files, workflow)
+    print('Assembly workflow: %s (%s, %s)' % (workflow.name, workflow.read_type, workflow.accuracy))
     for chrom, start, end, hap in phased_blocks:
         directory = '%s/assembly/%s/%s_%s/%s' % (files.tmp, chrom, start, end, hap)
-        if region_assembled(directory, platform, provenance):
+        expected = region_provenance(provenance, chrom, start, end, hap)
+        if region_status(directory, workflow, expected) is not None:
             continue
         if os.path.isdir(directory):
-            # Preserve untrusted/stale intermediate results for recovery.
-            os.replace(directory, directory + ".previous-" + uuid.uuid4().hex)
+            os.replace(directory, directory + '.previous-' + uuid.uuid4().hex)
         create_directory(directory)
-        assembly_scripts.append(create_assemble_script(files, cpu, directory, chrom, start, end, hap))
+        assembly_scripts.append(create_assemble_script(files, cpu, directory, chrom, start, end, hap, workflow, provenance))
     return assembly_scripts

@@ -88,20 +88,70 @@ colliding names.
 
 ## Assembly and coverage behavior
 
-SEQUELII and REVIO use Canu `-pacbio-hifi` and collect
-`canu/canu.contigs.fasta`. SEQUEL restores the historical `-pacbio` and subread
-polishing route, collecting `contigs.fasta`. That legacy route requires phased
-subreads plus `pbindex`, `pbmm2` and `gcpp`; these tools are not included in the
-modern HiFi environment. Missing prerequisites are errors, never an implicit
-fallback to unpolished contigs. Mixed/unknown PM metadata is rejected.
+Assembly dispatch now separates instrument (`@RG PM`) from read type
+(`@RG DS:READTYPE`) and per-read predicted accuracy (`rq`). In particular,
+`PM=SEQUEL; READTYPE=CCS` does not require a subreads BAM. The selector reads the
+original input BAM because FASTA conversion/mapping can discard PacBio metadata.
+It scans usable primary records once per assembly invocation; it does not sample
+quality or discard lower-quality reads to qualify for HiFi mode.
 
-Assembly scripts stop on errors and only record completion after validating
-nonempty sequence records. Collection requires matching completion provenance
-and fails on any missing/empty selected region, preserving the old combined
-FASTA on failure. References without a literal `igh` contig do not produce a
-spurious empty IGH-only FASTA. No Canu/polishing execution on real reads was
-performed; shell regression tests stub external assemblers and exercise paths,
-flags, failures and completion checks.
+| Input evidence | Canu flag | Polishing | Collected output |
+| --- | --- | --- | --- |
+| CCS, all usable primary reads have `rq >= 0.99` | `-pacbio-hifi` | None | `canu/canu.contigs.fasta` |
+| CCS, any lower or missing `rq` | `-pacbio` (correction, trimming, assembly) | No external subreads required | `canu/canu.contigs.fasta` |
+| Explicit SUBREAD | `-pacbio` | `pbindex`, `pbmm2 --preset SUBREAD`, `gcpp` | `contigs.fasta` |
+
+The quality cutoff follows the [PacBio BAM specification](https://pacbiofileformats.readthedocs.io/en/13.1/BAM.html).
+`READTYPE=SEGMENT;SOURCE=CCS` is treated as CCS. If READTYPE was stripped, canonical
+`movie/hole/ccs[/fwd|rev][/start_end]` names can recover CCS identity. Missing or
+lower `rq` is not evidence for HiFi; the correction route is the conservative
+choice, consistent with [Canu's input modes](https://canu.readthedocs.io/en/latest/tutorial.html).
+Ambiguous/unsupported or mixed CCS/SUBREAD inputs fail with an actionable message.
+Instrument model alone does not choose a workflow. Base qualities and pass counts
+are not substituted for `rq`.
+
+Explicit SUBREAD assembly extracts from a supplied, indexed, phased subreads BAM
+and uses the original subreads for polishing. It does not depend on a separate
+CCS BAM. The current CCS-focused `phase` command does not create that legacy
+phased subreads input automatically: supply results from a subread mapping/phasing
+workflow. Missing BAMs/indexes and missing polishing executables are errors.
+The extra polishing tools are not in the modern HiFi environment; the
+[explicit SUBREAD preset](https://github.com/PacificBiosciences/pbmm2) avoids the
+newer pbmm2 default of CCS.
+
+Region selection partitions the target BED by phase blocks; it does not imply
+coverage in every window/haplotype. Extraction validates the contig, coordinates,
+haplotype groups and BAM index before checking local coverage. It uses the same
+1-kb flanks and alignment-flag exclusions as before, with flanks clamped to the
+reference bounds. A legitimate zero-read extraction creates an atomic
+`skipped.json` with status `skipped_no_coverage`, **not** a successful `done` marker.
+Malformed inputs, missing sequences and tool failures are not converted to skips.
+
+Both assembled and skipped region receipts bind the read workflow, input BAMs
+and index, code, region coordinates, flank and haplotype. A changed input, read
+mode or old receipt causes the existing region directory to be archived before
+rebuilding. A valid skip always takes precedence over stale contigs: they are
+never collected, even if old files are restored into that directory. A skip can
+be reused on retry while its provenance still matches; it is reconsidered when
+inputs change.
+
+Every generated script extracts reads afresh and runs Canu/polishing in a new
+staging directory, preventing nonempty partial files from being reused even if
+the script itself is retried. Nonempty FASTA validation and successful tool exits
+are required before publication; completion is recorded last. Collection ignores
+only validated no-coverage skips. Mixed covered/uncovered samples can finish;
+all-empty samples fail with `No valid contigs overall` without publishing an
+empty assembly or overwriting an older valid combined FASTA. An optional IGH-only
+subset with no contigs is omitted (a stale subset FASTA is archived), provided
+the overall assembly has valid contigs.
+
+Tests use real synthetic BAM headers/records/indexes, actual extraction and
+collection, and the generated shell scripts. Canu, pbindex, pbmm2 and gcpp are
+**stubs**, so these tests verify dispatch, commands, publication and failure
+handling, not assembly accuracy or compatibility on real datasets. No real
+Canu/polishing run or rerun of the reported samples was possible. The conservative
+non-HiFi CCS mode may be slower and still legitimately fail at insufficient
+coverage; those failures remain explicit.
 
 A haplotype BAM with zero mapped reads produces a real BigWig with explicit
 zero-valued intervals spanning every BAM reference contig. It is neither a

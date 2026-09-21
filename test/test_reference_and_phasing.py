@@ -1,12 +1,9 @@
 import tempfile
 import unittest
-import sys
-import types
 from pathlib import Path
 
 from IGenotyper.common.reference import validate_bed
 
-sys.modules.setdefault("vcf", types.ModuleType("vcf"))
 from IGenotyper.common.vcffn import Variant
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os
+import subprocess
 
 from IGenotyper.command_lines.clt import CommandLine
 
@@ -10,8 +10,7 @@ class Assembly(CommandLine):
     def run_assembly_scripts(self,assembly_scripts):
         if not self.cpu.cluster:
             for script in assembly_scripts:
-                command = "sh %s" % script
-                os.system(command)
+                subprocess.check_call(["bash", script])
         else:
             try:
                 from lsf.lsf import Lsf

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from shlex import quote
+from IGenotyper.common.validation import require_usable_reads
 
 from IGenotyper.command_lines.clt import CommandLine
 
@@ -20,19 +21,19 @@ class ReadManip(CommandLine):
                    "%s "
                    "%s #> /dev/null 2>&1" % tuple(args))
         output_file = "%s.pbi" % self.files.ccs_bam
-        self.run_command(command,output_file)
-        command = "samtools index %s" % self.files.ccs_bam
+        self.run_command(command, [self.files.ccs_bam, output_file])
+        command = "samtools index %s %s" % (quote(self.files.ccs_bam), quote(self.files.ccs_bam + ".bai"))
         output_file = "%s.bai" % self.files.ccs_bam
-        self.run_command(command,output_file)
+        self.run_command(command, output_file, inputs=[self.files.ccs_bam])
 
     def turn_ccs_reads_to_fastq(self):
+        require_usable_reads(self.files.ccs_bam)
         command = (
-            "set -o pipefail; samtools fasta -@ %s %s | "
-            "sed 's|/ccs|/0_8|g; s|/fwd||g; s|/rev||g' > %s"
+            "samtools fasta -n -@ %s %s > %s"
             % (
                 int(self.cpu.threads),
                 quote(self.files.ccs_bam),
                 quote(self.files.ccs_fastq),
             )
         )
-        self.run_command(command, self.files.ccs_fastq)
+        self.run_command(command, self.files.ccs_fastq, inputs=[self.files.ccs_bam])

@@ -9,7 +9,7 @@ class PlotTools(CommandLine):
     def run_pygenometracks(self,config,plotfn):
         args = [config,plotfn]
         command = "pyGenomeTracks --tracks %s --region igh:1-1193129 -o %s" % tuple(args)
-        self.run_command(command,plotfn)
+        self.run_command(command, plotfn, inputs=[config])
 
     def rplot_gene_cov(self):
         args = [self.files.scripts,
@@ -17,4 +17,4 @@ class PlotTools(CommandLine):
                 self.files.plot_gene_cov,
                 self.files.plot_sv_gene_cov]
         command = "Rscript %s/rplot_gene_cov.R %s %s %s" % tuple(args)
-        self.run_command(command,self.files.plot_sv_gene_cov)
+        self.run_command(command, [self.files.plot_gene_cov, self.files.plot_sv_gene_cov], inputs=[self.files.gene_cov])

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from shlex import quote
+import sys
+from importlib.metadata import version
+from IGenotyper.command_lines.whatshap_genotype import ADAPTER_VERSION
 
 from IGenotyper.command_lines.clt import CommandLine
+from IGenotyper.common.validation import validate_vcf
 
 
 class Snps(CommandLine):
@@ -17,16 +21,20 @@ class Snps(CommandLine):
                 quote(bam),
             )
         )
-        self.run_command(command, snp_candidates)
+        self.run_command(command, snp_candidates,
+                         validator=lambda outputs: validate_vcf(outputs[0], self.sample),
+                         inputs=[bam, self.files.ref])
 
     def snp_candidates_from_ccs(self):
         self.snp_candidates(self.files.ccs_to_ref, self.files.snp_candidates)
 
     def snp_genotypes(self, bam, snp_candidates, snps_vcf):
+        sites = validate_vcf(snp_candidates, self.sample, reference=self.files.ref, bam=bam)
         command = (
-            "whatshap genotype --sample %s --ignore-read-groups "
+            "%s -m IGenotyper.command_lines.whatshap_genotype genotype --sample %s --ignore-read-groups "
             "--reference %s -o %s %s %s"
             % (
+                quote(sys.executable),
                 quote(self.sample),
                 quote(self.files.ref),
                 quote(snps_vcf),
@@ -34,7 +42,10 @@ class Snps(CommandLine):
                 quote(bam),
             )
         )
-        self.run_command(command, snps_vcf)
+        command += " # adapter=%s whatshap=%s" % (ADAPTER_VERSION, version("whatshap"))
+        self.run_command(command, snps_vcf,
+                         validator=lambda outputs: validate_vcf(outputs[0], self.sample, expected=sites),
+                         inputs=[bam, snp_candidates, self.files.ref])
 
     def snp_genotypes_from_ccs(self):
         self.snp_genotypes(
@@ -42,6 +53,7 @@ class Snps(CommandLine):
         )
 
     def phase_snps(self, phased_snps_vcf, snps_vcf, bams):
+        sites = validate_vcf(snps_vcf, self.sample)
         command = (
             "whatshap phase --sample %s --reference %s --ignore-read-groups "
             "--distrust-genotypes -o %s %s %s"
@@ -53,7 +65,9 @@ class Snps(CommandLine):
                 " ".join(quote(bam) for bam in bams),
             )
         )
-        self.run_command(command, phased_snps_vcf)
+        self.run_command(command, phased_snps_vcf,
+                         validator=lambda outputs: validate_vcf(outputs[0], self.sample, expected=sites),
+                         inputs=[snps_vcf, self.files.ref] + bams)
 
     def phase_ccs_snvs(self):
         self.phase_snps(
@@ -72,7 +86,7 @@ class Snps(CommandLine):
                 quote(phased_snps_vcf),
             )
         )
-        self.run_command(command, phased_blocks)
+        self.run_command(command, phased_blocks, inputs=[phased_snps_vcf, chr_lengths])
 
     def phased_blocks_from_ccs_snps(self):
         with open(self.files.chr_lengths, "w") as outfh:

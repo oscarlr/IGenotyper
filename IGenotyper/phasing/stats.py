@@ -289,8 +289,7 @@ def phasing_stats(sample_name,files,plot_tools_command_line,align_command_line):
 
     stats = input_stats(files,primary_alignment_bam)
     stats = phased_stats(files,stats,plot_tools_command_line,primary_alignment_bam)
-    if not non_emptyfile(files.plot_phasing):
-        phasing_plot(files,plot_tools_command_line,align_command_line,primary_alignment_bam)
+    phasing_plot(files,plot_tools_command_line,align_command_line,primary_alignment_bam)
 
     template = "%s/templates/report.html" % files.package_directory
     stats["sample"] = sample_name

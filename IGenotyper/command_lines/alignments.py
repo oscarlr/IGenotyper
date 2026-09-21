@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 from shlex import quote
+import pysam
+from IGenotyper.common.validation import require_usable_reads
 
-from IGenotyper.command_lines.clt import CommandLine, non_emptyfile
+from IGenotyper.command_lines.clt import CommandLine
 
 
 class Align(CommandLine):
     def map_reads_with_minimap2(self, reads, sorted_bam, ref, preset="map-hifi"):
         """Map reads and stream directly into a sorted, indexed BAM."""
         if reads.lower().endswith((".bam", ".cram")):
+            require_usable_reads(reads)
             query = "-"
             input_command = "samtools fasta -@ %s %s | " % (
                 int(self.cpu.threads),
@@ -32,7 +35,7 @@ class Align(CommandLine):
             quote(sorted_bam),
             quote(sorted_bam),
         )
-        self.run_command(command, "%s.bai" % sorted_bam)
+        self.run_command(command, [sorted_bam, "%s.bai" % sorted_bam], inputs=list(dict.fromkeys([reads, ref, minimap2_ref])))
 
     def sam_to_sorted_bam(self, prefix, sorted_bam):
         sam = "%s.sam" % prefix
@@ -42,18 +45,16 @@ class Align(CommandLine):
             quote(sam),
             quote(sorted_bam),
         )
-        self.run_command(command, "%s.bai" % sorted_bam)
+        self.run_command(command, [sorted_bam, "%s.bai" % sorted_bam], inputs=[sam])
 
     def map_subreads(self):
         print("Mapping subreads...")
         prefix = "%s/subreads_to_ref" % self.files.tmp
         sorted_bam_tmp = "%s.sorted.bam" % prefix
-        if not non_emptyfile(self.files.subreads_to_ref):
-            if not non_emptyfile("%s.bai" % sorted_bam_tmp):
-                self.map_reads_with_minimap2(
-                    self.files.input_bam, sorted_bam_tmp, self.files.ref, "map-pb"
-                )
-            self.select_target_reads(sorted_bam_tmp, self.files.subreads_to_ref)
+        self.map_reads_with_minimap2(
+            self.files.input_bam, sorted_bam_tmp, self.files.ref, "map-pb"
+        )
+        self.select_target_reads(sorted_bam_tmp, self.files.subreads_to_ref)
 
     def create_igh_ref(self):
         print("Creating IGH reference...")
@@ -63,7 +64,7 @@ class Align(CommandLine):
             quote(igh_ref),
             quote(igh_ref),
         )
-        self.run_command(command, "%s.fai" % igh_ref)
+        self.run_command(command, [igh_ref, "%s.fai" % igh_ref], inputs=[self.files.ref])
         return igh_ref
 
     def map_igh_assembly(self):
@@ -92,19 +93,14 @@ class Align(CommandLine):
             quote(target_bam_file),
             quote(target_bam_file),
         )
-        self.run_command(command, "%s.bai" % target_bam_file)
+        self.run_command(command, [target_bam_file, "%s.bai" % target_bam_file], inputs=[bam_file, self.files.target_regions])
 
     def map_ccs_reads(self):
         print("Mapping CCS reads...")
         prefix = "%s/ccs_to_ref" % self.files.tmp
-        if not non_emptyfile(self.files.ccs_to_ref):
-            if not non_emptyfile("%s.bai" % self.files.ccs_to_ref):
-                self.map_reads_with_minimap2(
-                    self.files.ccs_fastq,
-                    self.files.ccs_to_ref,
-                    self.files.ref,
-                    "map-hifi",
-                )
+        self.map_reads_with_minimap2(
+            self.files.ccs_fastq, self.files.ccs_to_ref, self.files.ref, "map-hifi"
+        )
 
     def blast_seq(self, fastafn, blast_out):
         command = (
@@ -113,7 +109,7 @@ class Align(CommandLine):
             "qstart qend qlen sseqid sstart send slen sstrand' > %s"
             % (quote(fastafn), quote(fastafn), quote(blast_out))
         )
-        self.run_command(command, blast_out)
+        self.run_command(command, blast_out, inputs=[fastafn])
 
     def map_merged_assembly(self):
         print("Mapping merged assembly...")
@@ -125,8 +121,25 @@ class Align(CommandLine):
         )
 
     def bam_to_bigwig(self, bam, bigwig):
+        with pysam.AlignmentFile(bam, "rb") as reads:
+            has_mapped_reads = any(not r.is_unmapped for r in reads.fetch(until_eof=True))
+            lengths = list(zip(reads.references, reads.lengths))
+        if not has_mapped_reads:
+            # Explicit zero signal over every reference sequence, readable by
+            # pyGenomeTracks (unlike a zero-byte or header-only BigWig).
+            import pyBigWig
+            if not lengths:
+                raise ValueError("Cannot create coverage without BAM reference lengths: %s" % bam)
+            def write_zero_track(outputs):
+                with pyBigWig.open(outputs[0], "w") as track:
+                    track.addHeader(lengths)
+                    for chrom, length in lengths:
+                        track.addEntries([chrom], [0], ends=[length], values=[0.0])
+            self.run_command("zero_coverage:v1", bigwig, inputs=[bam], action=write_zero_track)
+            print("Zero mapped reads in %s; wrote zero coverage track %s" % (bam, bigwig))
+            return
         command = "bamCoverage -b %s -o %s" % (quote(bam), quote(bigwig))
-        self.run_command(command, bigwig)
+        self.run_command(command, bigwig, inputs=[bam])
 
     def select_hap_sequence(self, bam, hap, outbam):
         command = "samtools view -bh -F 3884 -r %s -o %s %s && samtools index %s" % (
@@ -135,7 +148,7 @@ class Align(CommandLine):
             quote(bam),
             quote(outbam),
         )
-        self.run_command(command, "%s.bai" % outbam)
+        self.run_command(command, [outbam, "%s.bai" % outbam], inputs=[bam])
 
     def hap_bam_to_bigwig(self, bam, hap, bigwig):
         outbam = "%s/%s.bam" % (self.files.tmp, hap)
@@ -148,4 +161,4 @@ class Align(CommandLine):
             quote(inbam),
             quote(outbam),
         )
-        self.run_command(command, "%s.bai" % outbam)
+        self.run_command(command, [outbam, "%s.bai" % outbam], inputs=[inbam])

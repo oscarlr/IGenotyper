@@ -217,3 +217,9 @@ alignments  alleles  assembly  logs  plots  preprocessed  report.html  tmp  vari
 
 # Todo
 1. Add IGL and IGK alleles to data/alleles.fasta
+
+### Recovering interrupted or older runs
+
+See [pipeline fixes and recovery](docs/pipeline-recovery.md) for the WhatsHap 2.8
+read-name collision fix, completion records, legacy-output migration, assembly
+platform behavior, and synthetic regression tests.

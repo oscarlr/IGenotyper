@@ -2,7 +2,6 @@
 from IGenotyper.files import FileManager
 from IGenotyper.common.cpu import CpuManager
 
-from IGenotyper.common.helper import non_emptyfile,clean_up,remove_vcfs,run_type
 
 from IGenotyper.command_lines.snps import Snps
 from IGenotyper.command_lines.reads import ReadManip
@@ -10,14 +9,13 @@ from IGenotyper.command_lines.alignments import Align
 from IGenotyper.command_lines.plot import PlotTools
 
 from IGenotyper.phasing.snps import generate_phased_snps
-from IGenotyper.phasing.reads import phase_subreads,phase_ccs
+from IGenotyper.phasing.reads import phase_ccs
 from IGenotyper.phasing.stats import phasing_stats
 
 import os
-import sys
 import json
-import pysam
 from shutil import copyfile
+from IGenotyper.common.validation import require_usable_reads, validate_vcf
 
 def add_arguments(subparser):
     subparser.add_argument('--rhesus',default=False, action='store_true')
@@ -60,52 +58,27 @@ def run_phasing(
 ):    
     files = FileManager(outdir,bam,tmp,rhesus,data_dir)
 
-    if non_emptyfile(files.input_args):        
-        cpu = CpuManager(threads,mem,cluster,queue,walltime)
-        reads_command_line = ReadManip(files,cpu,sample)
-        align_command_line = Align(files,cpu,sample)
-        plot_command_line = PlotTools(files,cpu,sample)
-        snps_command_line = Snps(files,cpu,sample)
-        snps_command_line.phased_blocks_from_ccs_snps()
-        phasing_stats(sample,files,plot_command_line,align_command_line)
-
-        sys.exit(0)        
-
     cpu = CpuManager(threads,mem,cluster,queue,walltime)
     reads_command_line = ReadManip(files,cpu,sample)
     align_command_line = Align(files,cpu,sample)
     plot_command_line = PlotTools(files,cpu,sample)
     snps_command_line = Snps(files,cpu,sample)
     
-    #pacbio_machine = run_type(bam)
-    pacbio_machine = "SEQUELII"
-    if not non_emptyfile(files.phased_snps_vcf):
-
-        reads_command_line.turn_ccs_reads_to_fastq()
-        align_command_line.map_ccs_reads()
-
-        if input_vcf is None:
-            generate_phased_snps(files,cpu,sample)
-        else:
-            copyfile(input_vcf,files.phased_snps_vcf)
-
-    if not non_emptyfile(files.ccs_to_ref_phased):
-        phase_ccs(files,sample)
-
-    # if (not non_emptyfile(files.subreads_to_ref_phased)) and \
-    #    (not non_emptyfile(files.ccs_to_ref_phased)):
-    #     phase_ccs(files,sample)
-    #     phase_subreads(files,sample)
-
-        # if input_vcf is None:
-        #     iterations = 2
-        #     for iteration in range(0,iterations):
-        #         remove_vcfs(files)
-        #         fix_ccs_alignment(files,align_command_line,iteration)
-        #         fix_subread_alignment(files,align_command_line,iteration)
-        #         generate_phased_snps(files,cpu,sample)
-        #         phase_ccs(files,sample)
-        #         phase_subreads(files,sample)
+    require_usable_reads(files.ccs_bam)
+    reads_command_line.turn_ccs_reads_to_fastq()
+    align_command_line.map_ccs_reads()
+    if input_vcf is None:
+        # Each command checks its success receipt; file size cannot prove completion.
+        generate_phased_snps(files, cpu, sample)
+    else:
+        validate_vcf(input_vcf, sample)
+        if os.path.abspath(input_vcf) != os.path.abspath(files.phased_snps_vcf):
+            snps_command_line.run_command(
+                "import_phased_vcf:v1 sample=%s" % sample, files.phased_snps_vcf,
+                inputs=[input_vcf],
+                validator=lambda paths: validate_vcf(paths[0], sample),
+                action=lambda paths: copyfile(input_vcf, paths[0]))
+    phase_ccs(files, sample)
 
     snps_command_line.phased_blocks_from_ccs_snps()
     phasing_stats(sample,files,plot_command_line,align_command_line)

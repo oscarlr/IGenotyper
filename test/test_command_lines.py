@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 from IGenotyper.command_lines.alignments import Align
 from IGenotyper.command_lines.snps import Snps
 
@@ -8,7 +9,7 @@ class CommandCapture:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, command, output):
+    def __call__(self, command, output, **kwargs):
         self.calls.append((command, output))
 
 
@@ -22,11 +23,12 @@ class CommandLineTests(unittest.TestCase):
         capture = CommandCapture()
         align.run_command = capture
         align.map_reads_with_minimap2("reads.fasta", "mapped.bam", self.files.ref)
-        self.assertEqual(capture.calls[0][1], "mapped.bam.bai")
+        self.assertEqual(capture.calls[0][1], ["mapped.bam", "mapped.bam.bai"])
         self.assertIn("minimap2 -t 8 -a -x map-hifi", capture.calls[0][0])
         self.assertIn("| samtools sort -@ 8 -o mapped.bam -", capture.calls[0][0])
 
-    def test_minimap2_streams_bam_as_fasta(self):
+    @patch("IGenotyper.command_lines.alignments.require_usable_reads")
+    def test_minimap2_streams_bam_as_fasta(self, validate):
         align = Align(self.files, self.cpu, "sample")
         capture = CommandCapture()
         align.run_command = capture

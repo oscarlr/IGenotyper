@@ -1,6 +1,8 @@
 #!/bin/env python
 import os
 import json
+import tempfile
+import filecmp
 import pybedtools
 from Bio import SeqIO
 
@@ -15,7 +17,8 @@ from IGenotyper.command_lines.alignments import Align
 
 from IGenotyper.phasing.reads import phase_assembly
 
-from IGenotyper.assembly.scripts import get_assembly_scripts
+from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_contigs, assembly_provenance, region_assembled
+from IGenotyper.common.validation import fasta_records
 #from IGenotyper.assembly.merge_assembly import merge_assembly
 
 def add_arguments(subparser):
@@ -30,29 +33,34 @@ def add_arguments(subparser):
 
 def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None):
     seqs = []
-    for chrom, start, end, hap in phased_blocks:
-        if chrom_select != None:
-            if chrom != chrom_select:
-                continue
-        dir = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
-        if run_type(files.input_bam) == "SEQUELII":
-            contig = "%s/canu/canu.contigs.%s" % (dir,type_)
-        elif run_type(files.input_bam) == "REVIO":
-            contig = "%s/canu/canu.contigs.%s" % (dir,type_)
-        else:
-            contig = "%s/contigs.%s" % (dir,type_)
-        if os.path.isfile(contig):
-            contigs = list(SeqIO.parse(contig,type_))
-            total_contigs = len(contigs)
-            for i,record in enumerate(contigs):
-                record.id = "c=%s:%s-%s_h=%s_i=%s_t=%s_/0/0_0" % (chrom,start,end,hap,i,total_contigs)
-                record.description = ""
-                seqs.append(record)
-    SeqIO.write(seqs,outfile,type_)
+    platform = run_type(files.input_bam)
+    selected = [block for block in phased_blocks if chrom_select is None or block[0] == chrom_select]
+    if not selected:
+        raise RuntimeError("No assembly regions selected for %s" % outfile)
+    for chrom, start, end, hap in selected:
+        directory = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
+        contig = assembly_contigs(directory, platform, type_)
+        contigs = fasta_records(contig)
+        if not region_assembled(directory, platform, assembly_provenance(files, platform)):
+            raise RuntimeError("Assembly region has no valid completion record: %s" % directory)
+        for i, record in enumerate(contigs):
+            record.id = "c=%s:%s-%s_h=%s_i=%s_t=%s_/0/0_0" % (chrom, start, end, hap, i, len(contigs))
+            record.description = ""
+            seqs.append(record)
+    fd, temporary = tempfile.mkstemp(dir=os.path.dirname(outfile) or ".", suffix=".fasta")
+    try:
+        with os.fdopen(fd, "w") as stream:
+            SeqIO.write(seqs, stream, type_)
+        if not os.path.isfile(outfile) or not filecmp.cmp(temporary, outfile, shallow=False):
+            os.replace(temporary, outfile)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 def combine_assembly_sequences(files,phased_blocks):
     combine_sequence(files,phased_blocks,files.assembly_fasta,"fasta")
-    combine_sequence(files,phased_blocks,files.igh_assembly_fasta,"fasta","igh")
+    if any(block[0] == "igh" for block in phased_blocks):
+        combine_sequence(files,phased_blocks,files.igh_assembly_fasta,"fasta","igh")
     #combine_sequence(files,phased_blocks,files.assembly_fastq,"fastq")
 
 def run_assembly(
@@ -80,8 +88,6 @@ def run_assembly(
     phased_blocks = get_phased_blocks(files,files.phased_blocks)    
     
     #if not non_emptyfile(files.assembly_fastq): # CHANGED to GET CONSTANT
-    #pacbio_machine = run_type(files.input_bam)
-    pacbio_machine = "SEQUELII"
     assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks)
     assembly_command_line.run_assembly_scripts(assembly_scripts)
     

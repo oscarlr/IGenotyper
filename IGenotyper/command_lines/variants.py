@@ -11,5 +11,5 @@ class VariantTools(CommandLine):
 
     def run_kalign(self,fastafn,clufn):
         command = "kalign -i %s -f clu -o %s" % (fastafn,clufn)
-        self.run_command(command,clufn)
+        self.run_command(command, clufn, inputs=[fastafn])
 

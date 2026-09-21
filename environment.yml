@@ -12,6 +12,7 @@ dependencies:
   - canu>=2.3
   - blast>=2.16
   - kalign>=3.4
+  - pybigwig>=0.3.22
   - deeptools>=3.5
   - pygenometracks>=3.9
   - pytest  # Required by pyGenomeTracks package metadata.

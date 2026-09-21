@@ -1,7 +1,7 @@
 #!/bin/env python
 import pysam
+from IGenotyper.command_lines.clt import CommandLine
 
-from IGenotyper.common.helper import non_emptyfile
 from IGenotyper.common.vcffn import read_in_phased_vcf
 from IGenotyper.common.bamfn import create_phased_bam_header,create_tag
 
@@ -64,27 +64,22 @@ def phase_read(read,snps,chrom):
     return read
 
 def phase_alignments(vcffn,bam,sample,outbam):
-    vcf = read_in_phased_vcf(vcffn,sample)
-    phased_bam_index = "%s.bai" % outbam
-    if non_emptyfile(phased_bam_index):
-        return None
-    phase_snps = vcf.phased_variants()
-    unphased_bam = pysam.AlignmentFile(bam, 'rb')
-    phased_bam_header = create_phased_bam_header(unphased_bam)
-    phased_bam = pysam.AlignmentFile(outbam,'wb',header=phased_bam_header)
-    for read in unphased_bam.fetch():
-        if read.is_unmapped:
-            continue
-        if read.is_secondary:
-            continue
-        if read.is_supplementary:
-            continue
-        chrom = unphased_bam.get_reference_name(read.reference_id)
-        tagged_read = phase_read(read,phase_snps,chrom)
-        phased_bam.write(tagged_read)
-    unphased_bam.close()
-    phased_bam.close()
-    pysam.index(outbam)
+    def write_phased(outputs):
+        vcf = read_in_phased_vcf(vcffn, sample)
+        phase_snps = vcf.phased_variants()
+        with pysam.AlignmentFile(bam, 'rb') as unphased_bam:
+            header = create_phased_bam_header(unphased_bam)
+            with pysam.AlignmentFile(outputs[0], 'wb', header=header) as phased_bam:
+                for read in unphased_bam.fetch():
+                    if read.is_unmapped or read.is_secondary or read.is_supplementary:
+                        continue
+                    chrom = unphased_bam.get_reference_name(read.reference_id)
+                    phased_bam.write(phase_read(read, phase_snps, chrom))
+        pysam.index(outputs[0])
+
+    CommandLine(None, None, sample).run_command(
+        "phase_alignments:v2 sample=%s" % sample,
+        [outbam, outbam + '.bai'], inputs=[vcffn, bam], action=write_phased)
 
 def phase_subreads(files,sample):
     phase_alignments(files.phased_snps_vcf,files.subreads_to_ref,sample,files.subreads_to_ref_phased)

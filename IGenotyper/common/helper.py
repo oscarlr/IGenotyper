@@ -370,6 +370,9 @@ def extract_sequence(phased_bam,bed,fasta):
     SeqIO.write(records,fasta,"fasta") 
 
 def run_type(bam):
-    sam = pysam.AlignmentFile(bam,check_sq=False)
-    return dict(sam.header)['RG'][0]['PM']
+    with pysam.AlignmentFile(bam, check_sq=False) as sam:
+        platforms = {rg.get("PM", "").upper() for rg in sam.header.to_dict().get("RG", [])}
+    if len(platforms) != 1 or not platforms.issubset({"SEQUEL", "SEQUELII", "REVIO"}):
+        raise ValueError("BAM requires consistent SEQUEL, SEQUELII or REVIO read-group PM metadata: %s" % bam)
+    return platforms.pop()
 

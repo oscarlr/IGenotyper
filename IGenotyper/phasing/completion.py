@@ -100,8 +100,19 @@ def valid_command_receipt(path, visiting=None, recover=None):
 def recover_legacy_blocks(files, sample, path, state, mismatches):
     """Only the old shared lengths dependency may be replaced by revalidation."""
     from IGenotyper.command_lines.snps import phased_blocks_command
-    legacy = getattr(files, 'legacy_chr_lengths', None)
-    if (path != files.phased_blocks or legacy is None or mismatches != {legacy}
+    # The old installation may no longer exist. Identify its lengths input
+    # from the receipt, never by substituting the current installation prefix.
+    candidates = set(state['inputs']) - {files.phased_snps_vcf}
+    if len(candidates) != 1:
+        return False
+    legacy = candidates.pop()
+    recorded = Path(legacy)
+    package_path = (recorded.is_absolute() and '..' not in recorded.parts and
+                    (recorded.parts[-3:] == ('IGenotyper', 'data', 'chr_lengths.txt') or
+                     recorded.parts[-4:] == ('IGenotyper', 'data', 'rhesus', 'chr_lengths.txt')))
+    if not package_path and legacy != getattr(files, 'legacy_chr_lengths', None):
+        return False
+    if (path != files.phased_blocks or mismatches != {legacy}
             or set(state['inputs']) != {legacy, files.phased_snps_vcf}
             or set(state['outputs']) != {files.phased_blocks}
             or state['command'] != phased_blocks_command(sample, path, legacy, files.phased_snps_vcf)):

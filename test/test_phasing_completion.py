@@ -191,9 +191,10 @@ def block_files(root, shared):
     return files
 
 
-def legacy_blocks_run(tmp_path):
+def legacy_blocks_run(tmp_path, shared=None):
     from IGenotyper.command_lines.snps import Snps, write_chromosome_lengths
-    shared = tmp_path / 'shared-chr_lengths.txt'
+    shared = shared or tmp_path / 'shared-chr_lengths.txt'
+    shared.parent.mkdir(parents=True, exist_ok=True)
     files = block_files(tmp_path / 'sample', shared)
     write_legacy_receipts(files)
     write_chromosome_lengths(files.ref, str(shared))
@@ -326,3 +327,54 @@ def test_unverifiable_old_sample_is_preserved_not_automatically_rephased(tmp_pat
         invoke(files, monkeypatch)
     assert events == [] and signatures(before) == before
     assert not receipt_path(files).exists()
+
+
+
+@pytest.mark.parametrize('rhesus', [False, True])
+@pytest.mark.parametrize('removed', [False, True])
+def test_receipt_from_previous_installation_is_adopted(tmp_path, monkeypatch, rhesus, removed):
+    old = tmp_path / 'previous pinned installation' / 'IGenotyper' / 'data'
+    if rhesus:
+        old /= 'rhesus'
+    old /= 'chr_lengths.txt'
+    files = legacy_blocks_run(tmp_path, old)
+    files.legacy_chr_lengths = str(tmp_path / 'current' / 'IGenotyper/data/chr_lengths.txt')
+    if removed:
+        old.unlink()
+    before = signatures(final_outputs(files) + [files.phased_blocks + '.success.json'])
+    events = []
+    stub_pipeline(monkeypatch, events)
+    invoke(files, monkeypatch)
+    assert events == [] and receipt_path(files).exists()
+    assert signatures(before) == before
+    assert not Path(files.legacy_chr_lengths).exists()
+
+
+@pytest.mark.parametrize('change', ['nonpackage_path', 'command', 'vcf', 'reference', 'blocks'])
+def test_previous_installation_exception_remains_strict(tmp_path, change):
+    old = tmp_path / 'pinned' / 'IGenotyper/data/chr_lengths.txt'
+    if change == 'nonpackage_path':
+        old = tmp_path / 'unrelated/chr_lengths.txt'
+    files = legacy_blocks_run(tmp_path, old)
+    files.legacy_chr_lengths = str(tmp_path / 'current/IGenotyper/data/chr_lengths.txt')
+    if change == 'command':
+        receipt = Path(files.phased_blocks + '.success.json')
+        state = json.loads(receipt.read_text())
+        state['command'] = state['command'].replace('--sample sample', '--sample other')
+        receipt.write_text(json.dumps(state))
+    elif change in ('vcf', 'reference'):
+        target = files.phased_snps_vcf if change == 'vcf' else files.ref
+        with open(target, 'a') as stream:
+            stream.write('\n')
+    elif change == 'blocks':
+        # Even a matching recorded output signature cannot bypass regeneration.
+        Path(files.phased_blocks).write_text('different historical blocks\n')
+        receipt = Path(files.phased_blocks + '.success.json')
+        state = json.loads(receipt.read_text())
+        state['outputs'] = signatures([files.phased_blocks])
+        receipt.write_text(json.dumps(state))
+        Path(files.input_args).touch()
+    before = signatures(final_outputs(files))
+    assert not phasing_complete(files, provenance(files, 'sample', None))
+    assert not receipt_path(files).exists()
+    assert signatures(before) == before

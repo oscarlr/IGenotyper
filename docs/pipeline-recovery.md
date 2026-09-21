@@ -308,6 +308,12 @@ if a block-table receipt's **only** input mismatch is the known legacy shared
 match, IGenotyper runs `whatshap stats` in a temporary directory. It uses the
 validated phased VCF and lengths freshly derived from the current reference
 index. The regenerated table must match the existing table byte for byte.
+The legacy lengths path is taken from the saved receipt, so an older pinned
+installation may differ from the current installation or no longer exist.
+Only recognized `IGenotyper/data/chr_lengths.txt` and
+`IGenotyper/data/rhesus/chr_lengths.txt` package paths (or the configured legacy
+path) qualify. The recorded command must match exactly using that recorded path;
+arbitrary mismatched dependencies are not accepted.
 All other receipt-chain, reference, final-output and saved-argument checks still
 apply before the whole-phasing completion marker is written. Failed regeneration
 or a different block table prevents adoption.

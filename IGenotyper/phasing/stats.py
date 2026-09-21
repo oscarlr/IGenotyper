@@ -3,7 +3,6 @@ import pysam
 import numpy as np
 from pybedtools import BedTool
 
-from IGenotyper.common.plot import plot_histogram,plot_barplot
 from IGenotyper.common.helper import load_bed_regions,snps_from_reads,get_phased_blocks,show_value,skip_read,get_phased_regions,write_to_bashfile,get_igh_region,non_emptyfile
 
 def total_reads(bam):

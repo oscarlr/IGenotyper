@@ -16,6 +16,7 @@ import os
 import json
 from shutil import copyfile
 from IGenotyper.common.validation import require_usable_reads, validate_vcf
+from IGenotyper.phasing.completion import provenance, phasing_complete, record_completion, receipt_path
 
 def add_arguments(subparser):
     subparser.add_argument('--rhesus',default=False, action='store_true')
@@ -58,6 +59,12 @@ def run_phasing(
 ):    
     files = FileManager(outdir,bam,tmp,rhesus,data_dir)
 
+    expected = provenance(files, sample, input_vcf)
+    if phasing_complete(files, expected):
+        print('Phasing already completed and validated; reusing final outputs.')
+        return
+    receipt_path(files).unlink(missing_ok=True)
+
     cpu = CpuManager(threads,mem,cluster,queue,walltime)
     reads_command_line = ReadManip(files,cpu,sample)
     align_command_line = Align(files,cpu,sample)
@@ -84,6 +91,7 @@ def run_phasing(
     phasing_stats(sample,files,plot_command_line,align_command_line)
 
     save_parameters(files,sample,input_vcf)
+    record_completion(files, expected)
     #clean_up(files)
     
 def main(args):

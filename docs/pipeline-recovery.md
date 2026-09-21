@@ -253,3 +253,42 @@ Tests require pysam, Biopython, pybedtools, PyVCF3, pyBigWig, pytest and WhatsHa
 The local verification used Python 3.14 and WhatsHap 2.8, while the Conda
 production environment pins Python 3.11. Full production phasing/assembly and
 plot rendering are outside these small fixture tests.
+
+## Reusing a completed phasing run
+
+After every phasing step, plotting and reporting have succeeded, `IG phase`
+validates its final outputs and atomically writes `logs/phasing.success.json`.
+The phased BAM must be readable, indexed, contain mapped reads and have valid
+haplotype RG tags (0, 1 or 2). Its phased VCF must parse with the requested
+sample and ordered sites. The phase-block table, gene coverage table, three
+final plots, HTML report, statistics and saved arguments must all be nonempty.
+A lack of heterozygous sites does not invalidate an otherwise valid run.
+
+Subsequent invocations compare the input BAM, reference/index, target and plot
+annotations, optional input VCF, sample and reference mode, plus signatures of
+all final outputs. Matching runs return before conversion, mapping, phasing,
+statistics or plotting. This does not depend on temporary files or per-command
+receipts after the whole-pipeline receipt exists. Resource settings such as
+threads are deliberately excluded. A versioned phasing contract controls
+invalidation for future scientific changes; unrelated assembly code changes do
+not trigger rephasing. Source inputs and reference files must remain available.
+
+Existing runs without this new marker can be adopted if the saved arguments
+match, final outputs validate, and the final BAM, phased VCF, block table and
+plots have intact schema-2 command receipts. All available upstream receipt
+chains and their inputs/outputs are checked, including multi-output commands;
+the chain must reach the supplied input BAM and reference. The saved arguments
+must be at least as recent as all final files and inputs. This conservative
+migration does not treat a parseable partial VCF or a nonempty BAM as proof of
+success. Legacy runs without receipts, or those with removed intermediate
+files before adoption, use the normal per-command recovery path instead.
+
+A missing, changed or corrupt whole-pipeline receipt falls back to the normal
+pipeline and its per-command checks. Failed runs never publish a new completion
+receipt. Supplying a different BAM explicitly now takes precedence over the old
+saved BAM path; assembly commands that supply no BAM continue to load it from
+saved arguments.
+
+The resume tests use real small synthetic BAMs/indexes and VCFs, with pipeline
+commands and plotting stubbed. They verify dispatch and validation, not a full
+production phasing or plotting run.

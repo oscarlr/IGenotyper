@@ -237,3 +237,10 @@ coordinates, exit codes, and preserved log paths appear in `failed_regions`.
 Partial or stale contigs from failed regions are never collected. If Canu
 failures leave no valid contigs, the sample reports an error. Missing tools,
 malformed outputs and polishing failures remain errors.
+
+`IG phase` now returns immediately when its validated final outputs match
+`logs/phasing.success.json`. The check includes the phased BAM/index, phased
+VCF, phase blocks, final plots, report, statistics and saved arguments. Thread
+count changes and assembly retries do not trigger rephasing. Existing completed
+runs with intact command receipts can be recognized automatically; nonempty
+files without completion evidence are not automatically trusted.

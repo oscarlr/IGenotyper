@@ -19,8 +19,9 @@ class FileManager():
         if non_emptyfile("%s/args.json" % self.log):
             with open("%s/args.json" % self.log, 'r') as fh:
                 phasing_args = json.load(fh)
-            self.input_bam = phasing_args["bam"]
-            self.tmp = phasing_args["tmp"]
+            if bam is None:
+                self.input_bam = phasing_args["bam"]
+                self.tmp = phasing_args["tmp"]
             if data_dir is None:
                 data_dir = phasing_args.get("data_dir")
 

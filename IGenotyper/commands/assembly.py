@@ -20,6 +20,9 @@ from IGenotyper.phasing.reads import phase_assembly
 from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_contigs, assembly_provenance, region_status, region_provenance
 from IGenotyper.assembly.workflow import select_assembly_workflow
 from IGenotyper.common.validation import fasta_records
+from IGenotyper.assembly.scripts import assembly_bam, validate_assembly_inputs
+from IGenotyper.assembly.coverage import measure_ig_coverage
+from IGenotyper.assembly.status import write_sample_status
 #from IGenotyper.assembly.merge_assembly import merge_assembly
 
 def add_arguments(subparser):
@@ -30,6 +33,7 @@ def add_arguments(subparser):
     subparser.add_argument('--queue', metavar='QUEUE', default="premium", help='Queue for cluster')
     subparser.add_argument('--walltime', metavar='WALLTIME', default=2, help='Walltime for cluster')
     subparser.add_argument('--data-dir', help='Directory containing reference.fasta')
+    subparser.add_argument('--coverage-bed', help='Reference-matched IG loci BED for the 20x mean-coverage assembly gate')
     subparser.add_argument('outdir',metavar='OUTDIR',help='Directory for output')
 
 def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None,workflow=None,allow_empty=False):
@@ -85,7 +89,8 @@ def run_assembly(
         queue,
         walltime,
         outdir,
-        data_dir
+        data_dir,
+        coverage_bed=None
 ):
     files = FileManager(outdir,rhesus=rhesus,data_dir=data_dir)
 
@@ -99,16 +104,26 @@ def run_assembly(
     align_command_line = Align(files,cpu,sample)
     #snps_command_line = Snps(files,cpu,sample)
 
-    phased_blocks = get_phased_blocks(files,files.phased_blocks)    
-    
-    #if not non_emptyfile(files.assembly_fastq): # CHANGED to GET CONSTANT
+    # Gate before region planning or any assembly command. Phasing is read-only here.
     workflow = select_assembly_workflow(files.input_bam)
-    assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks,workflow)
-    assembly_command_line.run_assembly_scripts(assembly_scripts)
-    
-    combine_assembly_sequences(files,phased_blocks,workflow)
-    align_command_line.map_assembly()
-    phase_assembly(files,sample)
+    provenance = assembly_provenance(files, workflow)
+    coverage = None
+    write_sample_status(files, sample, 'running', provenance, coverage)
+    try:
+        coverage = measure_ig_coverage(files, assembly_bam(files, workflow), coverage_bed)
+        validate_assembly_inputs(provenance)
+        if coverage['below_threshold']:
+            return write_sample_status(files, sample, 'insufficient_coverage', provenance, coverage)
+        phased_blocks = get_phased_blocks(files,files.phased_blocks)
+        assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks,workflow)
+        assembly_command_line.run_assembly_scripts(assembly_scripts)
+        combine_assembly_sequences(files,phased_blocks,workflow)
+        align_command_line.map_assembly()
+        phase_assembly(files,sample)
+    except Exception as error:
+        write_sample_status(files, sample, 'failed', provenance, coverage, error)
+        raise
+    return write_sample_status(files, sample, 'completed', provenance, coverage)
 
     # merge_assembly(files,align_command_line,sample)
     # snps.phase_snvs_with_merged_seq()

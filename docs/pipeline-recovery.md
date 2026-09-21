@@ -86,6 +86,55 @@ colliding names.
   contigs for inspection. Keep these until recovery is verified. A fresh output
   directory is also an option if a complete old/new comparison is needed.
 
+## Minimum IG coverage before assembly
+
+`IG assembly` now checks **mean IG target depth before planning or running any
+assembly jobs**. If depth is **less than 20x**, it exits cleanly with a sample
+status of `insufficient_coverage`. Exactly 20x is eligible to proceed; it is not
+a guarantee that Canu will succeed. There is no special single-read skip rule.
+
+Depth is the number of aligned query bases divided by the union length of the
+IG target intervals, including zero-depth bases. All haplotypes are counted
+together. Secondary, supplementary, duplicate, QC-failed and unmapped records
+are excluded (flag mask 3844, matching assembly extraction). Deletions, reference
+skips, soft clips and insertions do not contribute aligned bases; no additional
+mapping-quality or base-quality cutoff is imposed. Overlapping BED intervals
+are merged to prevent double counting. The comparison uses unrounded counts,
+not rounded displayed depth, and is a sample-wide, length-weighted mean rather
+than a minimum at every position or a threshold for each haplotype/locus.
+
+For human references, the bundled `IG_loci.bed` annotations labeled `igh`,
+`ighc`, `igk` or `igl` are intersected with the configured target BED. This excludes
+non-IG marker windows and TCR loci. The rhesus target BED already contains only
+IG loci, so all its intervals are used. For custom reference coordinates, use:
+
+```sh
+IG assembly --coverage-bed /path/to/ig_targets.bed /path/to/output
+```
+
+This override must contain only the desired IG intervals. Malformed/empty BEDs,
+unknown contigs, missing BAM indexes and malformed alignments remain errors;
+they are not reported as insufficient coverage. The input is the selected
+workflow's phased BAM (CCS or supplied subreads), and its metadata and the BED
+files are recorded with the coverage calculation.
+
+The atomic `assembly/assembly_status.json` records the mean depth, threshold,
+aligned-base and target-base totals, individual interval depths, sample name
+and input provenance. A low-coverage result has:
+
+```json
+{"status": "insufficient_coverage", "assembly_completed": false, "retryable": false}
+```
+
+Retry schedulers should inspect this status and exclude unchanged inadequate
+inputs. Reinvoking assembly recomputes the read-only coverage check but does not
+run assembly jobs below 20x. Improved inputs are reconsidered automatically.
+Phasing BAMs, indexes and VCFs are not rewritten. Existing older assembly files
+are preserved, but are not evidence of completion for the current run: consult
+the status record. Above the gate, unexpected assembler failures still raise
+and record `failed`, and only a successfully collected, mapped and phased
+assembly is marked `completed`.
+
 ## Assembly and coverage behavior
 
 Assembly dispatch now separates instrument (`@RG PM`) from read type
@@ -145,8 +194,9 @@ staging directory, preventing nonempty partial files from being reused even if
 the script itself is retried. Nonempty FASTA validation and successful tool exits
 are required before publication; completion is recorded last. Collection ignores
 only validated no-coverage skips. Mixed covered/uncovered samples can finish;
-all-empty samples fail with `No valid contigs overall` without publishing an
-empty assembly or overwriting an older valid combined FASTA. An optional IGH-only
+The sample-level coverage gate normally stops all-empty inputs before assembly.
+If an eligible run nevertheless produces no valid contigs, collection still
+fails without publishing an empty assembly or overwriting an older valid FASTA. An optional IGH-only
 subset with no contigs is omitted (a stale subset FASTA is archived), provided
 the overall assembly has valid contigs.
 

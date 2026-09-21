@@ -394,3 +394,154 @@ def test_one_6447_base_read_is_not_treated_as_no_coverage(tmp_path, stub_tools, 
     assert len(next(SeqIO.parse(root / 'reads.fasta', 'fasta'))) == 6447
     assert not (root / 'skipped.json').exists()
     assert not (root / 'done').exists()
+
+
+def coverage_files(tmp_path, depth):
+    files = make_files(tmp_path, qualities=(0.999,))
+    write_reads(Path(files.ccs_to_ref_phased), 'SEQUEL', 'CCS', (0.999,) * depth, phased=True)
+    files.target_regions = str(tmp_path / 'targets.bed')
+    Path(files.target_regions).write_text('chr1\t100\t300\nchr1\t5000\t6000\n')
+    annotations = tmp_path / 'annotations'; annotations.mkdir()
+    files.reference_annotations = str(annotations)
+    (annotations / 'IG_loci.bed').write_text('chr1\t100\t300\tigh\nchr1\t5000\t6000\ttrb\n')
+    files.input_args = str(tmp_path / 'args.json')
+    Path(files.input_args).write_text(json.dumps({'sample': 'synthetic'}))
+    files.phased_blocks = 'unused'
+    return files
+
+
+def run_coverage_sample(files, monkeypatch, events, coverage_bed=None):
+    from IGenotyper.commands import assembly
+    monkeypatch.setattr(assembly, 'FileManager', lambda *args, **kwargs: files)
+    def plan(*args):
+        events.append('plan')
+        return [COVERED]
+    monkeypatch.setattr(assembly, 'get_phased_blocks', plan)
+    monkeypatch.setattr(assembly.Align, 'map_assembly', lambda *args: events.append('map'))
+    monkeypatch.setattr(assembly, 'phase_assembly', lambda *args: events.append('phase_assembly'))
+    return assembly.run_assembly(False, 1, 8, False, 'unused', 2, files.tmp, None, coverage_bed)
+
+
+@pytest.mark.parametrize('depth', [0, 1, 19, 20, 21])
+def test_20x_sample_gate_before_assembly(tmp_path, stub_tools, monkeypatch, depth):
+    from IGenotyper.command_lines.clt import signatures
+    files = coverage_files(tmp_path, depth)
+    vcf = tmp_path / 'valid-phasing.vcf'; vcf.write_text('preserve phasing')
+    protected = [files.ccs_to_ref_phased, files.ccs_to_ref_phased + '.bai', str(vcf)]
+    before = signatures(protected)
+    events = []
+    for _ in range(2):
+        result = run_coverage_sample(files, monkeypatch, events)
+        assert result['coverage']['mean_depth'] == depth
+        assert result['coverage']['target_bases'] == 200
+        assert result['retryable'] is False
+        assert signatures(protected) == before
+        if depth < 20:
+            assert result['status'] == 'insufficient_coverage'
+            assert result['assembly_completed'] is False
+            assert not Path(files.assembly_fasta).exists()
+            assert not (tmp_path / 'assembly').exists()
+            assert events == []
+            assert stub_tools() == []
+        else:
+            assert result['status'] == 'completed'
+            assert result['assembly_completed'] is True
+            assert Path(files.assembly_fasta).exists()
+            assert 'map' in events and 'phase_assembly' in events
+    assert json.loads((tmp_path / 'assembly_status.json').read_text()) == result
+
+
+def test_coverage_counts_uncovered_bases_and_unions_overlaps(tmp_path):
+    from IGenotyper.assembly.coverage import measure_ig_coverage
+    files = coverage_files(tmp_path, 20)
+    override = tmp_path / 'ig.bed'
+    override.write_text('chr1\t100\t300\nchr1\t150\t250\nchr1\t400\t600\n')
+    result = measure_ig_coverage(files, files.ccs_to_ref_phased, str(override))
+    assert result['target_bases'] == 400
+    assert result['aligned_bases'] == 4000
+    assert result['mean_depth'] == 10
+    assert result['below_threshold'] is True
+    assert [region['mean_depth'] for region in result['intervals']] == [20, 0]
+
+
+def test_coverage_excludes_secondary_supplementary_duplicate_and_qcfail(tmp_path):
+    from IGenotyper.assembly.coverage import measure_ig_coverage
+    files = coverage_files(tmp_path, 5)
+    bam = files.ccs_to_ref_phased
+    with pysam.AlignmentFile(bam, 'rb') as source:
+        header, reads = source.header, list(source)
+    with pysam.AlignmentFile(bam, 'wb', header=header) as out:
+        for read, flag in zip(reads, [0, 256, 2048, 1024, 512]):
+            read.flag = flag
+            out.write(read)
+    pysam.index(bam)
+    assert measure_ig_coverage(files, bam)['mean_depth'] == 1
+
+
+def test_coverage_counts_aligned_bases_not_deletions_or_clips(tmp_path):
+    from IGenotyper.assembly.coverage import measure_ig_coverage
+    files = coverage_files(tmp_path, 1)
+    bam = files.ccs_to_ref_phased
+    with pysam.AlignmentFile(bam, 'rb') as source:
+        header, read = source.header, next(source)
+    read.query_sequence = 'A' * 200
+    read.cigarstring = '50S50M50D50M50S'
+    with pysam.AlignmentFile(bam, 'wb', header=header) as out:
+        out.write(read)
+    pysam.index(bam)
+    result = measure_ig_coverage(files, bam)
+    assert result['aligned_bases'] == 100
+    assert result['mean_depth'] == .5
+
+
+def test_adequate_coverage_does_not_hide_canu_failure(tmp_path, stub_tools, monkeypatch):
+    files = coverage_files(tmp_path, 20)
+    monkeypatch.setenv('IG_TEST_CANU', 'failure')
+    with pytest.raises(subprocess.CalledProcessError):
+        run_coverage_sample(files, monkeypatch, [])
+    result = json.loads((tmp_path / 'assembly_status.json').read_text())
+    assert result['status'] == 'failed'
+    assert result['retryable'] is True
+    assert result['assembly_completed'] is False
+    assert result['coverage']['mean_depth'] == 20
+
+
+def test_improved_coverage_reconsiders_skipped_sample(tmp_path, stub_tools, monkeypatch):
+    files = coverage_files(tmp_path, 1)
+    assert run_coverage_sample(files, monkeypatch, [])['status'] == 'insufficient_coverage'
+    write_reads(Path(files.ccs_to_ref_phased), 'SEQUEL', 'CCS', (0.999,) * 20, phased=True)
+    assert run_coverage_sample(files, monkeypatch, [])['status'] == 'completed'
+
+
+def test_invalid_coverage_coordinates_are_errors(tmp_path, stub_tools, monkeypatch):
+    files = coverage_files(tmp_path, 1)
+    override = tmp_path / 'wrong.bed'; override.write_text('missing\t0\t100\n')
+    with pytest.raises(ValueError, match='outside the BAM reference'):
+        run_coverage_sample(files, monkeypatch, [], str(override))
+    assert json.loads((tmp_path / 'assembly_status.json').read_text())['status'] == 'failed'
+    assert stub_tools() == []
+
+
+def test_coverage_rhesus_uses_ig_only_target_bed(tmp_path):
+    from IGenotyper.assembly.coverage import measure_ig_coverage
+    files = coverage_files(tmp_path, 20)
+    files.rhesus = True
+    Path(files.target_regions).write_text('chr1\t100\t300\n')
+    assert measure_ig_coverage(files, files.ccs_to_ref_phased)['mean_depth'] == 20
+
+
+def test_coverage_threshold_does_not_round_up(tmp_path, stub_tools, monkeypatch):
+    files = coverage_files(tmp_path, 20)
+    bam = files.ccs_to_ref_phased
+    with pysam.AlignmentFile(bam, 'rb') as source:
+        header, reads = source.header, list(source)
+    reads[-1].query_sequence = 'A' * 199
+    reads[-1].cigarstring = '199M'
+    with pysam.AlignmentFile(bam, 'wb', header=header) as out:
+        for read in reads:
+            out.write(read)
+    pysam.index(bam)
+    result = run_coverage_sample(files, monkeypatch, [])
+    assert result['coverage']['mean_depth'] == 19.995
+    assert result['status'] == 'insufficient_coverage'
+    assert stub_tools() == []

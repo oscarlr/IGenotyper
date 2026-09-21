@@ -223,3 +223,8 @@ alignments  alleles  assembly  logs  plots  preprocessed  report.html  tmp  vari
 See [pipeline fixes and recovery](docs/pipeline-recovery.md) for the WhatsHap 2.8
 read-name collision fix, completion records, legacy-output migration, assembly
 platform behavior, and synthetic regression tests.
+
+Assembly requires at least 20x mean depth across IG target bases. Lower-coverage
+samples exit cleanly with `assembly/assembly_status.json` recording
+`insufficient_coverage` and `retryable: false`; phasing outputs are preserved.
+Use `IG assembly --coverage-bed IG_TARGETS.bed OUTDIR` for custom IG coordinates.

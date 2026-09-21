@@ -229,7 +229,11 @@ samples exit cleanly with `assembly/assembly_status.json` recording
 `insufficient_coverage` and `retryable: false`; phasing outputs are preserved.
 Use `IG assembly --coverage-bed IG_TARGETS.bed OUTDIR` for custom IG coordinates.
 
-A successful Canu run that produces no contigs skips that region. If no regions
-produce contigs, assembly exits cleanly with `no_contigs`,
+A successful Canu run that produces no contigs skips that region. If all regions are skipped without tool failures, assembly exits cleanly with `no_contigs`,
 `assembly_completed: false`, and `retryable: false`; read phasing is preserved.
-Nonzero tool exits and malformed outputs remain errors.
+A Canu failure is logged per region, and remaining regions continue. Recovered
+contigs from successful regions produce `completed_with_failures`; failed-region
+coordinates, exit codes, and preserved log paths appear in `failed_regions`.
+Partial or stale contigs from failed regions are never collected. If Canu
+failures leave no valid contigs, the sample reports an error. Missing tools,
+malformed outputs and polishing failures remain errors.

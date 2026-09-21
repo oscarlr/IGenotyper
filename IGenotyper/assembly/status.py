@@ -5,16 +5,20 @@ from pathlib import Path
 import tempfile
 
 
-def write_sample_status(files, sample, status, provenance, coverage, error=None):
+def write_sample_status(files, sample, status, provenance, coverage, error=None, failed_regions=None):
     destination = Path(files.assembly_fasta).parent / 'assembly_status.json'
     result = {'schema': 1, 'sample': sample, 'status': status,
-              'assembly_completed': status == 'completed',
+              'assembly_completed': status in ('completed', 'completed_with_failures'),
               'retryable': status in ('running', 'failed'),
-              'provenance': provenance, 'coverage': coverage}
+              'provenance': provenance, 'coverage': coverage,
+              'failed_regions': failed_regions or []}
     if status == 'insufficient_coverage':
         result['message'] = ('Assembly skipped: mean IG target coverage %.3fx is below %sx. '
                              'Do not automatically retry unchanged input. Phasing outputs are preserved.'
                              % (coverage['mean_depth'], coverage['minimum_mean_depth']))
+    if status == 'completed_with_failures':
+        result['message'] = ('Recovered assembly from successful regions; Canu failed in %s region(s). '
+                             'See failed_regions for coordinates and preserved logs.' % len(failed_regions))
     if status == 'no_contigs':
         result['message'] = ('Assembly finished without contigs; mapping and assembly phasing skipped. '
                              'Phasing outputs are preserved. Do not automatically retry unchanged input.')

@@ -131,9 +131,8 @@ inputs. Reinvoking assembly recomputes the read-only coverage check but does not
 run assembly jobs below 20x. Improved inputs are reconsidered automatically.
 Phasing BAMs, indexes and VCFs are not rewritten. Existing older assembly files
 are preserved, but are not evidence of completion for the current run: consult
-the status record. Above the gate, unexpected assembler failures still raise
-and record `failed`, and only a successfully collected, mapped and phased
-assembly is marked `completed`.
+the status record. Above the gate, Canu failures are recorded per region as described below.
+Only a successfully collected, mapped and phased assembly is marked completed.
 
 ## Assembly and coverage behavior
 
@@ -179,7 +178,8 @@ haplotype groups and BAM index before checking local coverage. It uses the same
 1-kb flanks and alignment-flag exclusions as before, with flanks clamped to the
 reference bounds. A legitimate zero-read extraction creates an atomic
 `skipped.json` with status `skipped_no_coverage`, **not** a successful `done` marker.
-Malformed inputs, missing sequences and tool failures are not converted to skips.
+Malformed inputs and missing sequences are not converted to skips. Canu failures
+are recorded separately from no-coverage and no-contig skips.
 
 Both assembled and skipped region receipts bind the read workflow, input BAMs
 and index, code, region coordinates, flank and haplotype. A changed input, read
@@ -194,9 +194,27 @@ staging directory, preventing nonempty partial files from being reused even if
 the script itself is retried. Nonempty FASTA validation and successful tool exits
 are required before publication; completion is recorded last. After a successful
 Canu exit, a missing or zero-byte contig FASTA creates `skipped_no_contigs` in
-`skipped.json`; polishing is skipped. Nonzero tool exits and malformed nonempty
-FASTA files remain errors. Collection ignores validated no-coverage and
+`skipped.json`; polishing is skipped. Malformed nonempty FASTA files, missing
+tools and polishing failures remain errors. Collection ignores validated no-coverage and
 no-contig skips, including any stale contigs in those directories.
+
+A nonzero Canu exit creates an atomic `failed.json` recording the region,
+haplotype, input/code provenance, exit code, console log path and log signature.
+The entire failed staging directory is preserved (including Canu internal logs
+and partial outputs). The region script then returns control to the runner so
+remaining jobs can execute, in both local and cluster modes. Missing completion
+or failure receipts still signal an error; scheduler interruptions are not
+silently treated as Canu failures.
+
+Collection excludes regions with current failure receipts, even if stale contigs
+or an old `done` marker exist. If valid contigs were recovered elsewhere, mapping
+and assembly phasing proceed, and the sample records `completed_with_failures`,
+`assembly_completed: true` and a `failed_regions` list containing coordinates,
+exit codes and preserved log paths. This outcome is not an automatic whole-sample
+retry (`retryable: false`). An explicit rerun retries failed regions while
+reusing valid successful regions; previous failed directories and their logs
+are archived intact beside the new attempt. If any Canu failures occur and no
+valid contigs are recovered, the sample reports `failed` and raises an error.
 
 Mixed assembled/skipped regions can finish normally. If every selected region
 is skipped, the sample exits cleanly with `status: no_contigs`,
@@ -213,7 +231,7 @@ collection, and the generated shell scripts. Canu, pbindex, pbmm2 and gcpp are
 handling, not assembly accuracy or compatibility on real datasets. No real
 Canu/polishing run or rerun of the reported samples was possible. The conservative
 non-HiFi CCS mode may be slower and still legitimately fail at insufficient
-coverage; those failures remain explicit.
+coverage; those failures remain explicit in region receipts and sample status.
 
 A haplotype BAM with zero mapped reads produces a real BigWig with explicit
 zero-valued intervals spanning every BAM reference contig. It is neither a

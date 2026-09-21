@@ -124,8 +124,8 @@ def test_no_contigs_never_writes_done(tmp_path, exit_code):
     script = create_assemble_script(files, CPU, str(region), 'chr1', 0, 200, '1')
     with patch.dict(os.environ, PATH=str(bindir) + os.pathsep + os.environ['PATH']):
         if exit_code:
-            with pytest.raises(subprocess.CalledProcessError):
-                Assembly(files, CPU, 'sample').run_assembly_scripts([script])
+            Assembly(files, CPU, 'sample').run_assembly_scripts([script])
+            assert json.loads((region / 'failed.json').read_text())['exit_code'] == exit_code
             assert not (region / 'skipped.json').exists()
         else:
             Assembly(files, CPU, 'sample').run_assembly_scripts([script])

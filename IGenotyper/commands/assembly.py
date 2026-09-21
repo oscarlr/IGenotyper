@@ -17,7 +17,7 @@ from IGenotyper.command_lines.alignments import Align
 
 from IGenotyper.phasing.reads import phase_assembly
 
-from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_contigs, assembly_provenance, region_status, region_provenance
+from IGenotyper.assembly.scripts import get_assembly_scripts, assembly_contigs, assembly_provenance, region_status, region_provenance, region_failure
 from IGenotyper.assembly.workflow import select_assembly_workflow
 from IGenotyper.common.validation import fasta_records
 from IGenotyper.assembly.scripts import assembly_bam, validate_assembly_inputs
@@ -46,7 +46,7 @@ def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None,workflo
     for chrom, start, end, hap in selected:
         directory = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
         status = region_status(directory, workflow, region_provenance(provenance, chrom, start, end, hap))
-        if status in ("skipped_no_coverage", "skipped_no_contigs"):
+        if status in ("skipped_no_coverage", "skipped_no_contigs", "failed_canu"):
             continue
         contig = assembly_contigs(directory, workflow, type_)
         contigs = fasta_records(contig)
@@ -108,6 +108,7 @@ def run_assembly(
     workflow = select_assembly_workflow(files.input_bam)
     provenance = assembly_provenance(files, workflow)
     coverage = None
+    failed_regions = []
     write_sample_status(files, sample, 'running', provenance, coverage)
     try:
         coverage = measure_ig_coverage(files, assembly_bam(files, workflow), coverage_bed)
@@ -117,14 +118,22 @@ def run_assembly(
         phased_blocks = get_phased_blocks(files,files.phased_blocks)
         assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks,workflow)
         assembly_command_line.run_assembly_scripts(assembly_scripts)
+        for chrom, start, end, hap in phased_blocks:
+            directory = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
+            failure = region_failure(directory, region_provenance(provenance, chrom, start, end, hap))
+            if failure is not None:
+                failed_regions.append(failure)
         if combine_assembly_sequences(files,phased_blocks,workflow) == 0:
+            if failed_regions:
+                raise RuntimeError('No valid contigs recovered; Canu failed in %s region(s). See assembly_status.json for logs.' % len(failed_regions))
             return write_sample_status(files, sample, 'no_contigs', provenance, coverage)
         align_command_line.map_assembly()
         phase_assembly(files,sample)
     except Exception as error:
-        write_sample_status(files, sample, 'failed', provenance, coverage, error)
+        write_sample_status(files, sample, 'failed', provenance, coverage, error, failed_regions)
         raise
-    return write_sample_status(files, sample, 'completed', provenance, coverage)
+    status = 'completed_with_failures' if failed_regions else 'completed'
+    return write_sample_status(files, sample, status, provenance, coverage, failed_regions=failed_regions)
 
     # merge_assembly(files,align_command_line,sample)
     # snps.phase_snvs_with_merged_seq()

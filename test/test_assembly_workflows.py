@@ -79,6 +79,11 @@ if name == 'canu':
     output = Path(args[args.index('-d') + 1]); output.mkdir(parents=True)
     assert list(SeqIO.parse(args[-1], 'fasta'))
     mode = os.environ.get('IG_TEST_CANU', 'success')
+    if mode == 'first_failure':
+        mode = 'failure' if len(Path(os.environ['IG_TEST_LOG']).read_text().splitlines()) == 1 else 'success'
+    print('Canu synthetic stdout')
+    print('Canu synthetic stderr', file=sys.stderr)
+    (output / 'internal.log').write_text('Canu internal diagnostic')
     if mode in ('missing', 'missing_failure'):
         pass
     elif mode == 'zero':
@@ -207,7 +212,7 @@ def test_empty_igh_subset_does_not_abort_other_assembly(tmp_path, stub_tools):
     assert len(list(tmp_path.glob('igh.fasta.previous-*'))) == 1
 
 
-@pytest.mark.parametrize('mode', ['failure', 'missing_failure', 'empty'])
+@pytest.mark.parametrize('mode', ['empty'])
 def test_actual_tool_failure_is_not_no_coverage(tmp_path, stub_tools, monkeypatch, mode):
     files = make_files(tmp_path)
     monkeypatch.setenv('IG_TEST_CANU', mode)
@@ -391,8 +396,8 @@ def test_one_6447_base_read_is_not_treated_as_no_coverage(tmp_path, stub_tools, 
         out.write(read)
     pysam.index(path)
     monkeypatch.setenv('IG_TEST_CANU', 'failure')
-    with pytest.raises(subprocess.CalledProcessError):
-        execute(files, [COVERED])
+    execute(files, [COVERED])
+    assert (directory(files, COVERED) / 'failed.json').exists()
     root = directory(files, COVERED)
     assert len(next(SeqIO.parse(root / 'reads.fasta', 'fasta'))) == 6447
     assert not (root / 'skipped.json').exists()
@@ -413,12 +418,12 @@ def coverage_files(tmp_path, depth):
     return files
 
 
-def run_coverage_sample(files, monkeypatch, events, coverage_bed=None):
+def run_coverage_sample(files, monkeypatch, events, coverage_bed=None, blocks=None):
     from IGenotyper.commands import assembly
     monkeypatch.setattr(assembly, 'FileManager', lambda *args, **kwargs: files)
     def plan(*args):
         events.append('plan')
-        return [COVERED]
+        return blocks or [COVERED]
     monkeypatch.setattr(assembly, 'get_phased_blocks', plan)
     monkeypatch.setattr(assembly.Align, 'map_assembly', lambda *args: events.append('map'))
     monkeypatch.setattr(assembly, 'phase_assembly', lambda *args: events.append('phase_assembly'))
@@ -500,13 +505,16 @@ def test_coverage_counts_aligned_bases_not_deletions_or_clips(tmp_path):
 def test_adequate_coverage_does_not_hide_canu_failure(tmp_path, stub_tools, monkeypatch):
     files = coverage_files(tmp_path, 20)
     monkeypatch.setenv('IG_TEST_CANU', 'failure')
-    with pytest.raises(subprocess.CalledProcessError):
+    with pytest.raises(RuntimeError, match='No valid contigs recovered'):
         run_coverage_sample(files, monkeypatch, [])
     result = json.loads((tmp_path / 'assembly_status.json').read_text())
     assert result['status'] == 'failed'
     assert result['retryable'] is True
     assert result['assembly_completed'] is False
     assert result['coverage']['mean_depth'] == 20
+    assert result['failed_regions'][0]['region'] == list(COVERED)
+    assert Path(result['failed_regions'][0]['log']).exists()
+    assert not Path(files.assembly_fasta).exists()
 
 
 def test_improved_coverage_reconsiders_skipped_sample(tmp_path, stub_tools, monkeypatch):
@@ -605,3 +613,94 @@ def test_sample_no_contigs_exits_cleanly_without_mapping(tmp_path, stub_tools, m
         assert signatures(before) == before
     assert json.loads((tmp_path / 'assembly_status.json').read_text()) == result
     assert [name for name, _ in stub_tools()] == ['canu']
+
+
+@pytest.mark.parametrize('mode', ['failure', 'missing_failure'])
+def test_canu_failure_receipt_preserves_logs_and_retries(tmp_path, stub_tools, monkeypatch, mode):
+    files = make_files(tmp_path)
+    monkeypatch.setenv('IG_TEST_CANU', mode)
+    for _ in range(2):
+        execute(files, [COVERED])
+        root = directory(files, COVERED)
+        receipt = json.loads((root / 'failed.json').read_text())
+        assert receipt['exit_code'] == 19
+        assert receipt['region'] == list(COVERED)
+        assert 'Canu synthetic stdout' in Path(receipt['log']).read_text()
+        assert 'Canu synthetic stderr' in Path(receipt['log']).read_text()
+        assert (Path(receipt['workdir']) / 'canu/internal.log').read_text() == 'Canu internal diagnostic'
+        assert not (root / 'done').exists()
+        assert not (root / 'skipped.json').exists()
+        assert combine_assembly_sequences(files, [COVERED]) == 0
+    assert len(stub_tools()) == 2
+    assert len(list(root.parent.glob('0.previous-*/.assembly-*/canu/internal.log'))) == 1
+
+
+def test_failed_region_never_collects_stale_or_partial_contigs(tmp_path, stub_tools, monkeypatch):
+    files = make_files(tmp_path)
+    monkeypatch.setenv('IG_TEST_CANU', 'failure')
+    execute(files, [COVERED])
+    root = directory(files, COVERED)
+    receipt = json.loads((root / 'failed.json').read_text())
+    assert (Path(receipt['workdir']) / 'canu/canu.contigs.fasta').exists()
+    (root / 'canu').mkdir()
+    (root / 'canu/canu.contigs.fasta').write_text('>stale\nTTTT\n')
+    (root / 'done').write_text('{}')
+    assert combine_assembly_sequences(files, [COVERED]) == 0
+    assert not Path(files.assembly_fasta).exists()
+    # A stale failure receipt is not a license to silently discard a region.
+    receipt['provenance']['region'][1] = 123
+    (root / 'failed.json').write_text(json.dumps(receipt))
+    with pytest.raises(RuntimeError, match='no valid completion record'):
+        combine_assembly_sequences(files, [COVERED])
+
+
+def test_mixed_failure_completes_sample_and_retries_only_failed_region(tmp_path, stub_tools, monkeypatch):
+    files = coverage_files(tmp_path, 20)
+    second = ('chr1', 100, 600, '0')
+    monkeypatch.setenv('IG_TEST_CANU', 'first_failure')
+    events = []
+    result = run_coverage_sample(files, monkeypatch, events, blocks=[COVERED, second])
+    assert result['status'] == 'completed_with_failures'
+    assert result['assembly_completed'] is True
+    assert len(result['failed_regions']) == 1
+    assert result['failed_regions'][0]['region'] == list(COVERED)
+    assert Path(result['failed_regions'][0]['log']).exists()
+    assert events == ['plan', 'map', 'phase_assembly']
+    records = list(SeqIO.parse(files.assembly_fasta, 'fasta'))
+    assert len(records) == 1 and 'c=chr1:100-600' in records[0].id
+    assert len(stub_tools()) == 2
+    # First-failure mode succeeds on the retry; the other region is reused.
+    result = run_coverage_sample(files, monkeypatch, [], blocks=[COVERED, second])
+    assert result['status'] == 'completed' and result['failed_regions'] == []
+    assert len(stub_tools()) == 3
+    assert len(list(SeqIO.parse(files.assembly_fasta, 'fasta'))) == 2
+
+
+def test_cluster_runner_continues_after_canu_failure(tmp_path, stub_tools, monkeypatch):
+    from types import ModuleType
+    files = make_files(tmp_path)
+    blocks = [COVERED, ('chr1', 100, 600, '0')]
+    scripts = get_assembly_scripts(files, CPU, blocks)
+    monkeypatch.setenv('IG_TEST_CANU', 'first_failure')
+    # Execute submitted scripts locally to exercise the cluster runner contract;
+    # this is not a live scheduler integration test.
+    class FakeLsf:
+        def __init__(self):
+            self.jobs = []
+        def config(self, **kwargs):
+            pass
+        def submit(self, command):
+            self.jobs.append(command)
+        def wait(self):
+            for script in self.jobs:
+                subprocess.check_call(['bash', script])
+    package = ModuleType('lsf')
+    module = ModuleType('lsf.lsf')
+    module.Lsf = FakeLsf
+    monkeypatch.setitem(sys.modules, 'lsf', package)
+    monkeypatch.setitem(sys.modules, 'lsf.lsf', module)
+    cpu = SimpleNamespace(cluster=True, threads=1, walltime=1, mem=1, queue='test')
+    Assembly(files, cpu, 'sample').run_assembly_scripts(scripts)
+    assert len(stub_tools()) == 2
+    assert (directory(files, COVERED) / 'failed.json').exists()
+    assert combine_assembly_sequences(files, blocks) == 1

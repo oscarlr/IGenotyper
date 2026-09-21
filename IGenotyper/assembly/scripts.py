@@ -48,8 +48,43 @@ def region_provenance(provenance, chrom, start, end, hap):
     return dict(provenance, region=[chrom, int(start), int(end), str(hap)], flank=1000)
 
 
+def region_failure(directory, provenance=None):
+    """Read a current Canu failure receipt; failure is never assembly success."""
+    try:
+        result = json.loads(Path(directory, 'failed.json').read_text())
+        if result['status'] != 'failed_canu' or not isinstance(result['exit_code'], int) or result['exit_code'] <= 0:
+            return None
+        if provenance is not None and result['provenance'] != provenance:
+            return None
+        if signatures([result['log']]) != result['logs']:
+            return None
+        return result
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def record_canu_failure(directory, provenance, exit_code, workdir):
+    validate_assembly_inputs(provenance)
+    log = str(Path(workdir, 'canu.log').resolve())
+    result = dict(status='failed_canu', provenance=provenance,
+                  region=provenance['region'], exit_code=int(exit_code),
+                  workdir=str(Path(workdir).resolve()), log=log, logs=signatures([log]))
+    fd, temporary = tempfile.mkstemp(prefix='.failure-', dir=directory)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            json.dump(result, stream, indent=2)
+        for marker in ('done', 'skipped.json'):
+            Path(directory, marker).unlink(missing_ok=True)
+        os.replace(temporary, Path(directory, 'failed.json'))
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+    print('Canu failed for %s (exit %s); log: %s' % (provenance['region'], exit_code, log), file=sys.stderr)
+
+
 def region_status(directory, workflow, provenance=None):
     """Only validated assembled or skipped outcomes are reusable."""
+    if Path(directory, 'failed.json').exists():
+        return 'failed_canu' if region_failure(directory, provenance) is not None else None
     try:
         # A skip takes precedence over any old contigs/done file in this directory.
         skip = Path(directory, 'skipped.json')
@@ -140,7 +175,7 @@ def get_assembly_scripts(files, cpu, phased_blocks, workflow=None):
     for chrom, start, end, hap in phased_blocks:
         directory = '%s/assembly/%s/%s_%s/%s' % (files.tmp, chrom, start, end, hap)
         expected = region_provenance(provenance, chrom, start, end, hap)
-        if region_status(directory, workflow, expected) is not None:
+        if region_status(directory, workflow, expected) in ('assembled', 'skipped_no_coverage', 'skipped_no_contigs'):
             continue
         if os.path.isdir(directory):
             os.replace(directory, directory + '.previous-' + uuid.uuid4().hex)

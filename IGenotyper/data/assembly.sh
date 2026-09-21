@@ -1,6 +1,6 @@
 # Variables are supplied by assembly/scripts.py. Run the generated script with bash.
 # Never reuse an old extraction, partial Canu output, or completion marker.
-rm -f "${output}/done" "${output}/skipped.json"
+rm -f "${output}/done" "${output}/skipped.json" "${output}/failed.json"
 count=$("${python}" -m IGenotyper.assembly.regions "${assembly_bam}" \
     "${chrom}" "${start}" "${end}" "${hap}" "${output}/reads.fasta")
 if [ "${count}" -eq 0 ]; then
@@ -18,12 +18,22 @@ if [ "${polish}" -eq 1 ]; then
     done
 fi
 
+command -v canu >/dev/null || { echo "Missing required assembler: canu" >&2; exit 1; }
 work=$(mktemp -d "${output}/.assembly-XXXXXX")
 trap 'rm -rf "${work}"' EXIT
-canu -p canu -d "${work}/canu" corOutCoverage=200 \
+if canu -p canu -d "${work}/canu" corOutCoverage=200 \
     minThreads="${threads}" genomeSize="${size}" useGrid=0 \
     minInputCoverage=0 stopOnLowCoverage=0 \
-    "${data_setting}" "${output}/reads.fasta"
+    "${data_setting}" "${output}/reads.fasta" > "${work}/canu.log" 2>&1; then
+    cat "${work}/canu.log"
+else
+    canu_exit=$?
+    # Keep the entire failed staging directory, including all Canu diagnostics.
+    trap - EXIT
+    cat "${work}/canu.log" >&2
+    "${python}" -c 'import json, sys; from IGenotyper.assembly.scripts import record_canu_failure; record_canu_failure(sys.argv[1], json.loads(sys.argv[2]), int(sys.argv[3]), sys.argv[4])' "${output}" "${completion}" "${canu_exit}" "${work}"
+    exit 0
+fi
 # Only a successful Canu exit may produce a no-contigs outcome.
 if [ ! -s "${work}/canu/canu.contigs.fasta" ]; then
     "${python}" -c 'import json, sys; from IGenotyper.assembly.scripts import record_region_result; record_region_result(sys.argv[1], json.loads(sys.argv[2]), "skipped_no_contigs", sys.argv[3])' "${output}" "${completion}" "${work}/canu/canu.contigs.fasta"

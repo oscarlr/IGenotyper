@@ -46,7 +46,7 @@ def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None,workflo
     for chrom, start, end, hap in selected:
         directory = "%s/assembly/%s/%s_%s/%s" % (files.tmp, chrom, start, end, hap)
         status = region_status(directory, workflow, region_provenance(provenance, chrom, start, end, hap))
-        if status == "skipped_no_coverage":
+        if status in ("skipped_no_coverage", "skipped_no_contigs"):
             continue
         contig = assembly_contigs(directory, workflow, type_)
         contigs = fasta_records(contig)
@@ -58,11 +58,11 @@ def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None,workflo
             seqs.append(record)
     if not seqs:
         if allow_empty:
-            # Optional chromosome subset: do not leave a stale FASTA at its path.
+            # A checked empty result must not leave a stale FASTA at its path.
             if os.path.exists(outfile):
                 os.replace(outfile, outfile + '.previous-' + uuid.uuid4().hex)
             return 0
-        raise RuntimeError("No valid contigs overall: all selected assembly regions have no coverage (%s)" % outfile)
+        raise RuntimeError("No valid contigs overall: all selected assembly regions were skipped (%s)" % outfile)
     fd, temporary = tempfile.mkstemp(dir=os.path.dirname(outfile) or ".", suffix=".fasta")
     try:
         with os.fdopen(fd, "w") as stream:
@@ -76,10 +76,10 @@ def combine_sequence(files,phased_blocks,outfile,type_,chrom_select=None,workflo
 
 def combine_assembly_sequences(files,phased_blocks,workflow=None):
     workflow = workflow or select_assembly_workflow(files.input_bam)
-    combine_sequence(files,phased_blocks,files.assembly_fasta,"fasta",workflow=workflow)
+    count = combine_sequence(files,phased_blocks,files.assembly_fasta,"fasta",workflow=workflow,allow_empty=True)
     if any(block[0] == "igh" for block in phased_blocks):
         combine_sequence(files,phased_blocks,files.igh_assembly_fasta,"fasta","igh",workflow=workflow,allow_empty=True)
-    #combine_sequence(files,phased_blocks,files.assembly_fastq,"fastq")
+    return count
 
 def run_assembly(
         rhesus,
@@ -117,7 +117,8 @@ def run_assembly(
         phased_blocks = get_phased_blocks(files,files.phased_blocks)
         assembly_scripts = get_assembly_scripts(files,cpu,phased_blocks,workflow)
         assembly_command_line.run_assembly_scripts(assembly_scripts)
-        combine_assembly_sequences(files,phased_blocks,workflow)
+        if combine_assembly_sequences(files,phased_blocks,workflow) == 0:
+            return write_sample_status(files, sample, 'no_contigs', provenance, coverage)
         align_command_line.map_assembly()
         phase_assembly(files,sample)
     except Exception as error:

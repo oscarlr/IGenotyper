@@ -79,11 +79,15 @@ if name == 'canu':
     output = Path(args[args.index('-d') + 1]); output.mkdir(parents=True)
     assert list(SeqIO.parse(args[-1], 'fasta'))
     mode = os.environ.get('IG_TEST_CANU', 'success')
-    if mode == 'empty':
+    if mode in ('missing', 'missing_failure'):
+        pass
+    elif mode == 'zero':
+        (output / 'canu.contigs.fasta').touch()
+    elif mode == 'empty':
         (output / 'canu.contigs.fasta').write_text('>empty\\n')
     else:
         (output / 'canu.contigs.fasta').write_text('>synthetic\\nACGT\\n')
-    if mode == 'failure':
+    if mode in ('failure', 'missing_failure'):
         sys.exit(19)
 elif name == 'pbindex':
     Path(args[0] + '.pbi').write_text('stub index')
@@ -179,18 +183,17 @@ def test_mixed_covered_uncovered_and_stale_skip_outputs(tmp_path, stub_tools):
     assert execute(files, [UNCOVERED, COVERED]) == []
 
 
-def test_all_uncovered_fails_without_empty_assembly(tmp_path, stub_tools):
+def test_all_uncovered_finishes_without_empty_assembly(tmp_path, stub_tools):
     files = make_files(tmp_path)
     blocks = [UNCOVERED, ('igh', 0, 500, '0')]
     execute(files, blocks)
     assert stub_tools() == []
-    with pytest.raises(RuntimeError, match='No valid contigs overall'):
-        combine_assembly_sequences(files, blocks)
+    assert combine_assembly_sequences(files, blocks) == 0
     assert not Path(files.assembly_fasta).exists()
     Path(files.assembly_fasta).write_text('>previous\nACGT\n')
-    with pytest.raises(RuntimeError, match='No valid contigs overall'):
-        combine_assembly_sequences(files, blocks)
-    assert Path(files.assembly_fasta).read_text() == '>previous\nACGT\n'
+    assert combine_assembly_sequences(files, blocks) == 0
+    assert not Path(files.assembly_fasta).exists()
+    assert next(tmp_path.glob('assembly.fasta.previous-*')).read_text() == '>previous\nACGT\n'
 
 
 def test_empty_igh_subset_does_not_abort_other_assembly(tmp_path, stub_tools):
@@ -204,7 +207,7 @@ def test_empty_igh_subset_does_not_abort_other_assembly(tmp_path, stub_tools):
     assert len(list(tmp_path.glob('igh.fasta.previous-*'))) == 1
 
 
-@pytest.mark.parametrize('mode', ['failure', 'empty'])
+@pytest.mark.parametrize('mode', ['failure', 'missing_failure', 'empty'])
 def test_actual_tool_failure_is_not_no_coverage(tmp_path, stub_tools, monkeypatch, mode):
     files = make_files(tmp_path)
     monkeypatch.setenv('IG_TEST_CANU', mode)
@@ -545,3 +548,60 @@ def test_coverage_threshold_does_not_round_up(tmp_path, stub_tools, monkeypatch)
     assert result['coverage']['mean_depth'] == 19.995
     assert result['status'] == 'insufficient_coverage'
     assert stub_tools() == []
+
+
+@pytest.mark.parametrize('mode', ['missing', 'zero'])
+@pytest.mark.parametrize('read_type', ['CCS', 'SUBREAD'])
+def test_no_canu_contigs_is_reusable_skip(tmp_path, stub_tools, monkeypatch, mode, read_type):
+    files = make_files(tmp_path, read_type=read_type)
+    monkeypatch.setenv('IG_TEST_CANU', mode)
+    execute(files, [COVERED])
+    root = directory(files, COVERED)
+    workflow = select_assembly_workflow(files.input_bam)
+    expected = region_provenance(assembly_provenance(files, workflow), *COVERED)
+    assert region_status(str(root), workflow, expected) == 'skipped_no_contigs'
+    assert not (root / 'done').exists()
+    assert not region_assembled(str(root), workflow, expected)
+    # A valid skip must take precedence over stale contigs, even if restored later.
+    stale = Path(assembly_contigs(str(root), workflow))
+    stale.parent.mkdir(parents=True, exist_ok=True)
+    stale.write_text('>stale\nTTTT\n')
+    assert combine_assembly_sequences(files, [COVERED]) == 0
+    assert not Path(files.assembly_fasta).exists()
+    assert execute(files, [COVERED]) == []
+    assert [name for name, _ in stub_tools()] == ['canu']
+    # Changed source evidence invalidates a no-contigs receipt.
+    write_reads(Path(files.input_bam), 'SEQUEL', read_type, (None, None))
+    assert len(get_assembly_scripts(files, CPU, [COVERED])) == 1
+
+
+def test_mixed_no_contigs_and_assembled_regions(tmp_path, stub_tools, monkeypatch):
+    files = make_files(tmp_path)
+    second = ('chr1', 100, 600, '0')
+    monkeypatch.setenv('IG_TEST_CANU', 'missing')
+    execute(files, [COVERED])
+    monkeypatch.setenv('IG_TEST_CANU', 'success')
+    execute(files, [second])
+    assert combine_assembly_sequences(files, [COVERED, second]) == 1
+    records = list(SeqIO.parse(files.assembly_fasta, 'fasta'))
+    assert len(records) == 1 and 'c=chr1:100-600' in records[0].id
+
+
+@pytest.mark.parametrize('mode', ['missing', 'zero'])
+def test_sample_no_contigs_exits_cleanly_without_mapping(tmp_path, stub_tools, monkeypatch, mode):
+    from IGenotyper.command_lines.clt import signatures
+    files = coverage_files(tmp_path, 20)
+    before = signatures([files.ccs_to_ref_phased, files.ccs_to_ref_phased + '.bai'])
+    monkeypatch.setenv('IG_TEST_CANU', mode)
+    events = []
+    Path(files.assembly_fasta).write_text('>old\nACGT\n')
+    for _ in range(2):
+        result = run_coverage_sample(files, monkeypatch, events)
+        assert result['status'] == 'no_contigs'
+        assert result['assembly_completed'] is False
+        assert result['retryable'] is False
+        assert not Path(files.assembly_fasta).exists()
+        assert 'map' not in events and 'phase_assembly' not in events
+        assert signatures(before) == before
+    assert json.loads((tmp_path / 'assembly_status.json').read_text()) == result
+    assert [name for name, _ in stub_tools()] == ['canu']

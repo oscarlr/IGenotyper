@@ -24,6 +24,12 @@ canu -p canu -d "${work}/canu" corOutCoverage=200 \
     minThreads="${threads}" genomeSize="${size}" useGrid=0 \
     minInputCoverage=0 stopOnLowCoverage=0 \
     "${data_setting}" "${output}/reads.fasta"
+# Only a successful Canu exit may produce a no-contigs outcome.
+if [ ! -s "${work}/canu/canu.contigs.fasta" ]; then
+    "${python}" -c 'import json, sys; from IGenotyper.assembly.scripts import record_region_result; record_region_result(sys.argv[1], json.loads(sys.argv[2]), "skipped_no_contigs", sys.argv[3])' "${output}" "${completion}" "${work}/canu/canu.contigs.fasta"
+    echo "Skipped assembly (Canu produced no contigs): ${region}, haplotype ${hap}"
+    exit 0
+fi
 "${python}" -c 'import sys; from IGenotyper.common.validation import fasta_records; fasta_records(sys.argv[1])' "${work}/canu/canu.contigs.fasta"
 
 if [ "${polish}" -eq 1 ]; then

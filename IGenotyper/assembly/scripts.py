@@ -49,13 +49,14 @@ def region_provenance(provenance, chrom, start, end, hap):
 
 
 def region_status(directory, workflow, provenance=None):
-    """Only completed assembly or a checked no-coverage receipt is reusable."""
+    """Only validated assembled or skipped outcomes are reusable."""
     try:
         # A skip takes precedence over any old contigs/done file in this directory.
         skip = Path(directory, 'skipped.json')
         state = json.loads((skip if skip.exists() else Path(directory, 'done')).read_text())
-        status = 'skipped_no_coverage' if skip.exists() else 'assembled'
-        if state.get('status') != status:
+        status = state.get('status')
+        allowed = ('skipped_no_coverage', 'skipped_no_contigs') if skip.exists() else ('assembled',)
+        if status not in allowed:
             return None
         outputs = {} if skip.exists() else signatures([assembly_contigs(directory, workflow)])
         if state.get('outputs') != outputs:
@@ -87,6 +88,10 @@ def record_region_result(directory, provenance, status, contigs=None):
         reads = Path(directory, 'reads.fasta')
         if not reads.is_file() or reads.stat().st_size != 0:
             raise RuntimeError('Cannot record no coverage without a validated empty extraction')
+        outputs, marker, other = {}, 'skipped.json', 'done'
+    elif status == 'skipped_no_contigs':
+        if contigs is None or (os.path.exists(contigs) and (not os.path.isfile(contigs) or os.path.getsize(contigs) != 0)):
+            raise RuntimeError('Cannot record no contigs with a nonempty or invalid output')
         outputs, marker, other = {}, 'skipped.json', 'done'
     else:
         raise ValueError('Unknown assembly status: %s' % status)

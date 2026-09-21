@@ -228,3 +228,8 @@ Assembly requires at least 20x mean depth across IG target bases. Lower-coverage
 samples exit cleanly with `assembly/assembly_status.json` recording
 `insufficient_coverage` and `retryable: false`; phasing outputs are preserved.
 Use `IG assembly --coverage-bed IG_TARGETS.bed OUTDIR` for custom IG coordinates.
+
+A successful Canu run that produces no contigs skips that region. If no regions
+produce contigs, assembly exits cleanly with `no_contigs`,
+`assembly_completed: false`, and `retryable: false`; read phasing is preserved.
+Nonzero tool exits and malformed outputs remain errors.

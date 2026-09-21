@@ -192,13 +192,20 @@ inputs change.
 Every generated script extracts reads afresh and runs Canu/polishing in a new
 staging directory, preventing nonempty partial files from being reused even if
 the script itself is retried. Nonempty FASTA validation and successful tool exits
-are required before publication; completion is recorded last. Collection ignores
-only validated no-coverage skips. Mixed covered/uncovered samples can finish;
-The sample-level coverage gate normally stops all-empty inputs before assembly.
-If an eligible run nevertheless produces no valid contigs, collection still
-fails without publishing an empty assembly or overwriting an older valid FASTA. An optional IGH-only
-subset with no contigs is omitted (a stale subset FASTA is archived), provided
-the overall assembly has valid contigs.
+are required before publication; completion is recorded last. After a successful
+Canu exit, a missing or zero-byte contig FASTA creates `skipped_no_contigs` in
+`skipped.json`; polishing is skipped. Nonzero tool exits and malformed nonempty
+FASTA files remain errors. Collection ignores validated no-coverage and
+no-contig skips, including any stale contigs in those directories.
+
+Mixed assembled/skipped regions can finish normally. If every selected region
+is skipped, the sample exits cleanly with `status: no_contigs`,
+`assembly_completed: false` and `retryable: false`. No empty FASTA is published,
+and contig mapping/phasing are skipped. Stale combined FASTAs are archived as
+`*.previous-<uuid>`. Original read phasing outputs remain untouched. Older
+assembly alignment files, if present, are historical: consult the sample status
+before using them. Skip receipts are reused only while their provenance matches.
+An empty optional IGH-only subset is likewise omitted.
 
 Tests use real synthetic BAM headers/records/indexes, actual extraction and
 collection, and the generated shell scripts. Canu, pbindex, pbmm2 and gcpp are

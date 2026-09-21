@@ -15,6 +15,9 @@ def write_sample_status(files, sample, status, provenance, coverage, error=None)
         result['message'] = ('Assembly skipped: mean IG target coverage %.3fx is below %sx. '
                              'Do not automatically retry unchanged input. Phasing outputs are preserved.'
                              % (coverage['mean_depth'], coverage['minimum_mean_depth']))
+    if status == 'no_contigs':
+        result['message'] = ('Assembly finished without contigs; mapping and assembly phasing skipped. '
+                             'Phasing outputs are preserved. Do not automatically retry unchanged input.')
     if error is not None:
         result['error'] = '%s: %s' % (type(error).__name__, error)
     fd, temporary = tempfile.mkstemp(prefix='.assembly-status-', dir=destination.parent)

@@ -1,5 +1,6 @@
 """Small public synthetic fixtures for assembly, restart and WhatsHap failures."""
 import os
+import json
 import shutil
 import subprocess
 import sys
@@ -113,7 +114,7 @@ def test_missing_assembly_preserves_previous_output(tmp_path, content):
 
 
 @pytest.mark.parametrize("exit_code", [0, 7])
-def test_failed_assembly_never_writes_done(tmp_path, exit_code):
+def test_no_contigs_never_writes_done(tmp_path, exit_code):
     files = files_for(tmp_path)
     region = tmp_path / 'region'; region.mkdir()
     (region / 'reads.fasta').write_text('>r\nACGT\n')
@@ -122,8 +123,13 @@ def test_failed_assembly_never_writes_done(tmp_path, exit_code):
     canu = bindir / 'canu'; canu.write_text('#!/bin/bash\nexit %s\n' % exit_code); canu.chmod(0o755)
     script = create_assemble_script(files, CPU, str(region), 'chr1', 0, 200, '1')
     with patch.dict(os.environ, PATH=str(bindir) + os.pathsep + os.environ['PATH']):
-        with pytest.raises(subprocess.CalledProcessError):
+        if exit_code:
+            with pytest.raises(subprocess.CalledProcessError):
+                Assembly(files, CPU, 'sample').run_assembly_scripts([script])
+            assert not (region / 'skipped.json').exists()
+        else:
             Assembly(files, CPU, 'sample').run_assembly_scripts([script])
+            assert json.loads((region / 'skipped.json').read_text())['status'] == 'skipped_no_contigs'
     assert not (region / 'done').exists()
 
 

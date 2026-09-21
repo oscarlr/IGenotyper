@@ -292,3 +292,28 @@ saved arguments.
 The resume tests use real small synthetic BAMs/indexes and VCFs, with pipeline
 commands and plotting stubbed. They verify dispatch and validation, not a full
 production phasing or plotting run.
+
+### Shared chromosome-length file migration
+
+Chromosome lengths are now generated from the reference `.fai` into each
+sample's `logs/chr_lengths.txt`, never into the installed package's `data`
+directory. The file is replaced atomically only when its contents change, so
+repeat block-statistics calls preserve its timestamps and existing command
+receipts. Processing another sample cannot invalidate this dependency.
+
+For pre-marker runs, there is one narrowly scoped compatibility exception:
+if a block-table receipt's **only** input mismatch is the known legacy shared
+`chr_lengths.txt`, and the command, phased VCF and block-table signatures still
+match, IGenotyper runs `whatshap stats` in a temporary directory. It uses the
+validated phased VCF and lengths freshly derived from the current reference
+index. The regenerated table must match the existing table byte for byte.
+All other receipt-chain, reference, final-output and saved-argument checks still
+apply before the whole-phasing completion marker is written. Failed regeneration
+or a different block table prevents adoption.
+
+This migration preserves the existing phased BAM, its index, the block table
+and its old command receipt. Consequently it does not change the BAM/index
+signatures used by reusable assembly-region receipts. After adoption, the
+whole-phasing completion marker makes further shared-file changes irrelevant.
+Regression tests exercise real WhatsHap stats on synthetic VCFs; other phasing
+steps remain stubbed in the restart-dispatch tests.

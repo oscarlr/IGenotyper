@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import subprocess
 
 import pysam
 
@@ -66,7 +67,7 @@ def record_completion(files, expected):
         Path(temporary).unlink(missing_ok=True)
 
 
-def valid_command_receipt(path, visiting=None):
+def valid_command_receipt(path, visiting=None, recover=None):
     """Validate an existing receipt chain before adopting a pre-marker run."""
     visiting = set() if visiting is None else visiting
     if path in visiting:
@@ -75,16 +76,49 @@ def valid_command_receipt(path, visiting=None):
     try:
         state = json.loads(Path(path + '.success.json').read_text())
         if (state['schema'] != 2 or path not in state['outputs'] or
-                signatures(state['inputs']) != state['inputs'] or
                 signatures(state['outputs']) != state['outputs']):
             raise ValueError('Stale command receipt: %s' % path)
+        mismatches = set()
+        for source, signature in state['inputs'].items():
+            try:
+                current = signatures([source])[source]
+            except OSError:
+                current = None
+            if current != signature:
+                mismatches.add(source)
+        if mismatches and not (recover and recover(path, state, mismatches)):
+            raise ValueError('Stale command inputs: %s' % path)
         sources = set(state['inputs'])
         for source in state['inputs']:
             if Path(source + '.success.json').exists():
-                sources.update(valid_command_receipt(source, visiting))
+                sources.update(valid_command_receipt(source, visiting, recover))
         return sources
     finally:
         visiting.remove(path)
+
+
+def recover_legacy_blocks(files, sample, path, state, mismatches):
+    """Only the old shared lengths dependency may be replaced by revalidation."""
+    from IGenotyper.command_lines.snps import Snps, phased_blocks_command, write_chromosome_lengths
+    legacy = getattr(files, 'legacy_chr_lengths', None)
+    if (path != files.phased_blocks or legacy is None or mismatches != {legacy}
+            or set(state['inputs']) != {legacy, files.phased_snps_vcf}
+            or set(state['outputs']) != {files.phased_blocks}
+            or state['command'] != phased_blocks_command(sample, path, legacy, files.phased_snps_vcf)):
+        return False
+    validate_vcf(files.phased_snps_vcf, sample)
+    before = signatures([files.ref, files.ref + '.fai', files.phased_snps_vcf, path])
+    with tempfile.TemporaryDirectory(prefix='.check-legacy-blocks-', dir=files.log) as work:
+        lengths = str(Path(work, 'chr_lengths.txt'))
+        regenerated = str(Path(work, 'phased_blocks.txt'))
+        write_chromosome_lengths(files.ref, lengths)
+        Snps(files, None, sample).phased_blocks(regenerated, lengths, files.phased_snps_vcf)
+        if Path(regenerated).read_bytes() != Path(path).read_bytes():
+            return False
+    if signatures(before) != before:
+        return False
+    print('Validated legacy phase blocks against reference-derived lengths; preserving existing outputs.')
+    return True
 
 
 def phasing_complete(files, expected):
@@ -105,7 +139,8 @@ def phasing_complete(files, expected):
         sources = set()
         for path in [files.ccs_to_ref_phased, files.phased_snps_vcf,
                      files.phased_blocks, files.plot_phasing, files.plot_gene_cov]:
-            sources.update(valid_command_receipt(path))
+            sources.update(valid_command_receipt(path, recover=lambda path, state, mismatches:
+                recover_legacy_blocks(files, expected['sample'], path, state, mismatches)))
         if not {files.input_bam, files.ref}.issubset(sources):
             return False
         # args.json was written last by the old pipeline. Changed final files or
@@ -116,5 +151,5 @@ def phasing_complete(files, expected):
             return False
         record_completion(files, expected)
         return True
-    except (OSError, ValueError, RuntimeError, KeyError, TypeError):
+    except (OSError, ValueError, RuntimeError, KeyError, TypeError, subprocess.CalledProcessError):
         return False

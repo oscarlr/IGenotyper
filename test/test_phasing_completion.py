@@ -174,3 +174,101 @@ def test_file_manager_respects_explicit_new_bam(tmp_path, monkeypatch):
     assert files.input_bam == 'new.bam'
     assert files.tmp == str(tmp_path / 'tmp')
     assert FileManager(str(tmp_path)).input_bam == 'old.bam'
+
+
+def block_files(root, shared):
+    root.mkdir()
+    files = fixture_files(root)
+    files.chr_lengths = str(root / 'chr_lengths.txt')
+    files.legacy_chr_lengths = str(shared)
+    # Real WhatsHap stats consumes a phased VCF with a phase-set annotation.
+    vcf = Path(files.phased_snps_vcf)
+    text = vcf.read_text().replace('#CHROM', '##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phase set">\n#CHROM')
+    vcf.write_text(text.replace('\tGT\t0|1\n', '\tGT:PS\t0|1:11\n') +
+                   'chr1\t14\t.\tT\tC\t.\tPASS\t.\tGT:PS\t1|0:11\n')
+    return files
+
+
+def legacy_blocks_run(tmp_path):
+    from IGenotyper.command_lines.snps import Snps, write_chromosome_lengths
+    shared = tmp_path / 'shared-chr_lengths.txt'
+    files = block_files(tmp_path / 'sample', shared)
+    write_legacy_receipts(files)
+    write_chromosome_lengths(files.ref, str(shared))
+    # Replace the synthetic block receipt with a real WhatsHap command receipt.
+    Snps(files, None, 'sample').phased_blocks(files.phased_blocks, str(shared), files.phased_snps_vcf)
+    Path(files.input_args).touch()
+    shared.write_text('chr1\t2000\n')  # A different sample overwrites shared lengths.
+    return files
+
+
+def test_sample_local_lengths_do_not_invalidate_other_sample(tmp_path):
+    from IGenotyper.command_lines.snps import Snps
+    shared = tmp_path / 'shared-chr_lengths.txt'; shared.write_text('leave shared alone\n')
+    a = block_files(tmp_path / 'a', shared)
+    b = block_files(tmp_path / 'b', shared)
+    for files in (a, b):
+        write_legacy_receipts(files)
+    runner = Snps(a, None, 'sample')
+    runner.phased_blocks_from_ccs_snps()
+    Path(a.input_args).touch()
+    before = signatures([a.chr_lengths, a.phased_blocks, a.phased_blocks + '.success.json'])
+    runner.phased_blocks_from_ccs_snps()
+    assert signatures(before) == before  # Neither unchanged lengths nor blocks rewritten.
+    Snps(b, None, 'sample').phased_blocks_from_ccs_snps()
+    assert signatures(before) == before
+    assert shared.read_text() == 'leave shared alone\n'
+    assert phasing_complete(a, provenance(a, 'sample', None))
+
+
+def test_legacy_shared_lengths_revalidation_preserves_bam_blocks_and_skips(tmp_path, monkeypatch):
+    files = legacy_blocks_run(tmp_path)
+    before = signatures(final_outputs(files) + [files.phased_blocks + '.success.json'])
+    events = []
+    stub_pipeline(monkeypatch, events)
+    invoke(files, monkeypatch)
+    assert events == []
+    assert receipt_path(files).exists()
+    assert signatures(before) == before
+    assert not list(Path(files.log).glob('.check-legacy-blocks-*'))
+    # Once adopted, no further regeneration is required even if shared lengths change.
+    Path(files.legacy_chr_lengths).write_text('chr1\t3000\n')
+    invoke(files, monkeypatch)
+    assert events == [] and signatures(before) == before
+
+
+@pytest.mark.parametrize('change', ['ref', 'fai', 'vcf', 'blocks', 'other_input', 'command'])
+def test_legacy_lengths_exception_rejects_other_changes(tmp_path, change):
+    files = legacy_blocks_run(tmp_path)
+    if change in ('ref', 'fai', 'vcf', 'blocks'):
+        path = {'ref': files.ref, 'fai': files.ref + '.fai',
+                'vcf': files.phased_snps_vcf, 'blocks': files.phased_blocks}[change]
+        with open(path, 'a') as stream:
+            stream.write('\n')
+    else:
+        receipt = Path(files.phased_blocks + '.success.json')
+        state = json.loads(receipt.read_text())
+        if change == 'other_input':
+            state['inputs'][files.input_bam] = [0, 0, 0]
+        else:
+            state['command'] += ' --unrecognized-option'
+        receipt.write_text(json.dumps(state))
+    before = signatures(final_outputs(files))
+    assert not phasing_complete(files, provenance(files, 'sample', None))
+    assert not receipt_path(files).exists()
+    assert signatures(before) == before
+
+
+def test_legacy_regenerated_blocks_must_match_even_with_intact_output_receipt(tmp_path):
+    files = legacy_blocks_run(tmp_path)
+    # Simulate a trusted older tool producing a different table: its signature
+    # is intact, so byte-for-byte regeneration is the check that must reject it.
+    Path(files.phased_blocks).write_text('different block table\n')
+    receipt = Path(files.phased_blocks + '.success.json')
+    state = json.loads(receipt.read_text())
+    state['outputs'] = signatures([files.phased_blocks])
+    receipt.write_text(json.dumps(state))
+    Path(files.input_args).touch()
+    assert not phasing_complete(files, provenance(files, 'sample', None))
+    assert Path(files.phased_blocks).read_text() == 'different block table\n'
+    assert not receipt_path(files).exists()

@@ -159,7 +159,8 @@ class FileManager():
         self.igh_assembly_to_ref_subs_phased = "%s/igh_contigs_to_ref_subs_phased.sorted.bam" % self.alignments
 
         self.phased_blocks = "%s/phased_blocks.txt" % self.variants
-        self.chr_lengths = "%s/chr_lengths.txt" % compatibility_data
+        self.legacy_chr_lengths = "%s/chr_lengths.txt" % compatibility_data
+        self.chr_lengths = "%s/chr_lengths.txt" % self.log
         self.input_args = "%s/args.json" % self.log
         self.assembly_script = "%s/data/assembly.sh" % self.package_directory
 

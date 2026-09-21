@@ -1,11 +1,45 @@
 #!/usr/bin/env python3
 from shlex import quote
 import sys
+import os
+import tempfile
+from pathlib import Path
 from importlib.metadata import version
 from IGenotyper.command_lines.whatshap_genotype import ADAPTER_VERSION
 
 from IGenotyper.command_lines.clt import CommandLine
 from IGenotyper.common.validation import validate_vcf
+
+
+def write_chromosome_lengths(reference, destination):
+    """Publish sample-local reference lengths, preserving unchanged files."""
+    rows = []
+    seen = set()
+    with open(reference + '.fai') as stream:
+        for line in stream:
+            fields = line.rstrip().split('\t')
+            if len(fields) < 2 or fields[0] in seen or int(fields[1]) <= 0:
+                raise ValueError('Invalid reference FASTA index: %s.fai' % reference)
+            seen.add(fields[0])
+            rows.append('%s\t%s\n' % (fields[0], int(fields[1])))
+    if not rows:
+        raise ValueError('Empty reference FASTA index: %s.fai' % reference)
+    content = ''.join(rows)
+    destination = Path(destination)
+    if destination.is_file() and destination.read_text() == content:
+        return
+    fd, temporary = tempfile.mkstemp(prefix='.chr-lengths-', dir=destination.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(content)
+        os.replace(temporary, destination)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def phased_blocks_command(sample, phased_blocks, chr_lengths, phased_snps_vcf):
+    return ('whatshap stats --sample %s --block-list %s --chr-lengths %s %s'
+            % tuple(quote(str(arg)) for arg in (sample, phased_blocks, chr_lengths, phased_snps_vcf)))
 
 
 class Snps(CommandLine):
@@ -77,23 +111,11 @@ class Snps(CommandLine):
         )
 
     def phased_blocks(self, phased_blocks, chr_lengths, phased_snps_vcf):
-        command = (
-            "whatshap stats --sample %s --block-list %s --chr-lengths %s %s"
-            % (
-                quote(self.sample),
-                quote(phased_blocks),
-                quote(chr_lengths),
-                quote(phased_snps_vcf),
-            )
-        )
+        command = phased_blocks_command(self.sample, phased_blocks, chr_lengths, phased_snps_vcf)
         self.run_command(command, phased_blocks, inputs=[phased_snps_vcf, chr_lengths])
 
     def phased_blocks_from_ccs_snps(self):
-        with open(self.files.chr_lengths, "w") as outfh:
-            with open("%s.fai" % self.files.ref, "r") as infh:
-                for line in infh:
-                    fields = line.rstrip().split("\t")
-                    outfh.write("%s\t%s\n" % (fields[0], fields[1]))
+        write_chromosome_lengths(self.files.ref, self.files.chr_lengths)
         self.phased_blocks(
             self.files.phased_blocks,
             self.files.chr_lengths,
@@ -109,6 +131,7 @@ class Snps(CommandLine):
         )
 
     def phased_blocks_from_merged_seq(self):
+        write_chromosome_lengths(self.files.ref, self.files.chr_lengths)
         self.phased_blocks(
             self.files.phased_blocks_merged_seq,
             self.files.chr_lengths,

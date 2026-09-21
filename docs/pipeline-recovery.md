@@ -77,8 +77,8 @@ colliding names.
   untouched if execution or validation fails. An interruption between multiple
   file replacements leaves no valid receipt, so the whole step reruns. Concurrent
   writers to the same output directory are not supported.
-- Original nonempty legacy files are **not** automatically trusted. The first
-  retry regenerates FASTA, mappings, variants and phased BAMs; dependency receipts
+- Incomplete nonempty legacy files are **not** automatically trusted. Without
+  validated whole-pipeline completion, command recovery regenerates FASTA, mappings, variants and phased BAMs; dependency receipts
   propagate invalidation. The old `args.json` and nonempty-VCF shortcuts no longer
   bypass this recovery. Subsequent successful outputs can be reused.
 - Assembly regions with legacy/stale completion records are moved intact to
@@ -280,8 +280,9 @@ chains and their inputs/outputs are checked, including multi-output commands;
 the chain must reach the supplied input BAM and reference. The saved arguments
 must be at least as recent as all final files and inputs. This conservative
 migration does not treat a parseable partial VCF or a nonempty BAM as proof of
-success. Legacy runs without receipts, or those with removed intermediate
-files before adoption, use the normal per-command recovery path instead.
+success. Runs with some modern command receipts still require those receipts
+to validate. Fully legacy completed runs without terminal command receipts use
+the separate compatibility check below.
 
 A missing, changed or corrupt whole-pipeline receipt falls back to the normal
 pipeline and its per-command checks. Failed runs never publish a new completion
@@ -317,3 +318,29 @@ signatures used by reusable assembly-region receipts. After adoption, the
 whole-phasing completion marker makes further shared-file changes irrelevant.
 Regression tests exercise real WhatsHap stats on synthetic VCFs; other phasing
 steps remain stubbed in the restart-dispatch tests.
+
+
+### Completed samples that predate success receipts
+
+Already-phased older samples are no longer automatically sent through phasing
+just because they have no newer success receipts. With matching saved arguments
+and all final outputs present, IGenotyper validates the phased BAM/index and
+haplotype tags, checks its reference dictionary, compares the phased VCF's full
+site list with the retained source genotyped VCF (or supplied input VCF), and
+regenerates the phase-block table in a temporary directory for exact comparison.
+Existing source-VCF receipts, when present, must still validate. Inputs newer
+than the saved run prevent adoption. Older versions could refresh reports after
+saving arguments, so this receiptless compatibility path permits those later
+final-file timestamps; it does not relax modern receipt signature checks.
+
+A successful check writes only the new whole-phasing completion receipt. The
+original BAM, index, VCF, block table and reports keep their content and file
+signatures, preserving reusable assembly results. No conversion, mapping,
+genotyping, read phasing or plotting is run.
+
+If a receiptless old run lacks the evidence needed for validation, IGenotyper
+stops with an explicit message and preserves the existing results; it does not
+automatically rephase them. Restore the missing source/final files, or explicitly
+use a new output directory when a fresh phasing run is intended. Validation
+establishes consistency of the retained results, not a retrospective guarantee
+of the scientific accuracy of an older software version.

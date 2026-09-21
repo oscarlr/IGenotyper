@@ -69,6 +69,7 @@ def test_finished_pipeline_skips_all_steps_even_with_new_threads(tmp_path, monke
     files = fixture_files(tmp_path)
     events = []
     stub_pipeline(monkeypatch, events)
+    Path(files.input_args).unlink()  # This test starts a new pipeline, not an old completed run.
     invoke(files, monkeypatch)
     assert events == ['convert', 'map', 'vcf', 'phase', 'blocks', 'stats']
     assert receipt_path(files).exists()
@@ -107,6 +108,7 @@ def test_failed_final_step_never_marks_pipeline_complete(tmp_path, monkeypatch):
     files = fixture_files(tmp_path)
     events = []
     stub_pipeline(monkeypatch, events, fail=True)
+    Path(files.input_args).unlink()
     with pytest.raises(RuntimeError, match='plot failure'):
         invoke(files, monkeypatch)
     assert not receipt_path(files).exists()
@@ -271,4 +273,56 @@ def test_legacy_regenerated_blocks_must_match_even_with_intact_output_receipt(tm
     Path(files.input_args).touch()
     assert not phasing_complete(files, provenance(files, 'sample', None))
     assert Path(files.phased_blocks).read_text() == 'different block table\n'
+    assert not receipt_path(files).exists()
+
+
+
+def untracked_legacy_run(tmp_path):
+    from IGenotyper.command_lines.snps import Snps
+    files = block_files(tmp_path / 'old-sample', tmp_path / 'old-shared-lengths')
+    Snps(files, None, 'sample').phased_blocks_from_ccs_snps()
+    files.snps_vcf = str(Path(files.log, 'source.vcf'))
+    Path(files.snps_vcf).write_text(Path(files.phased_snps_vcf).read_text())
+    for receipt in Path(files.log).glob('*.success.json'):
+        receipt.unlink()
+    Path(files.input_args).touch()
+    # Old versions reran reports after args.json without refreshing args.json.
+    Path(files.report).write_text('refreshed legacy report')
+    return files
+
+
+def test_receiptless_old_sample_is_adopted_without_rephasing(tmp_path, monkeypatch):
+    files = untracked_legacy_run(tmp_path)
+    before = signatures(final_outputs(files))
+    events = []
+    stub_pipeline(monkeypatch, events)
+    invoke(files, monkeypatch)
+    assert events == []
+    assert receipt_path(files).exists()
+    assert signatures(before) == before
+    invoke(files, monkeypatch)
+    assert events == [] and signatures(before) == before
+
+
+@pytest.mark.parametrize('damage', ['missing_source', 'partial_vcf', 'missing_plot', 'wrong_blocks', 'bad_bam'])
+def test_unverifiable_old_sample_is_preserved_not_automatically_rephased(tmp_path, monkeypatch, damage):
+    from IGenotyper.phasing.completion import LegacyPhasingError
+    files = untracked_legacy_run(tmp_path)
+    if damage == 'missing_source':
+        Path(files.snps_vcf).unlink()
+    elif damage == 'partial_vcf':
+        vcf = Path(files.phased_snps_vcf)
+        vcf.write_text('\n'.join(vcf.read_text().splitlines()[:-1]) + '\n')
+    elif damage == 'missing_plot':
+        Path(files.plot_phasing).write_text('')
+    elif damage == 'wrong_blocks':
+        Path(files.phased_blocks).write_text('incorrect blocks\n')
+    else:
+        Path(files.ccs_to_ref_phased).write_bytes(b'invalid BAM')
+    before = signatures(final_outputs(files))
+    events = []
+    stub_pipeline(monkeypatch, events)
+    with pytest.raises(LegacyPhasingError, match='No rephasing was started'):
+        invoke(files, monkeypatch)
+    assert events == [] and signatures(before) == before
     assert not receipt_path(files).exists()

@@ -242,5 +242,8 @@ malformed outputs and polishing failures remain errors.
 `logs/phasing.success.json`. The check includes the phased BAM/index, phased
 VCF, phase blocks, final plots, report, statistics and saved arguments. Thread
 count changes and assembly retries do not trigger rephasing. Existing completed
-runs with intact command receipts can be recognized automatically; nonempty
-files without completion evidence are not automatically trusted.
+runs with intact command receipts can be recognized automatically. Completed
+older runs without receipts can also be adopted by validating the BAM/index,
+source and phased VCF sites, and regenerated block table. If legacy validation
+fails, IGenotyper preserves the old results and reports the problem rather than
+automatically rephasing them.

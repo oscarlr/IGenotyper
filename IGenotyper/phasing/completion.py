@@ -99,13 +99,19 @@ def valid_command_receipt(path, visiting=None, recover=None):
 
 def recover_legacy_blocks(files, sample, path, state, mismatches):
     """Only the old shared lengths dependency may be replaced by revalidation."""
-    from IGenotyper.command_lines.snps import Snps, phased_blocks_command, write_chromosome_lengths
+    from IGenotyper.command_lines.snps import phased_blocks_command
     legacy = getattr(files, 'legacy_chr_lengths', None)
     if (path != files.phased_blocks or legacy is None or mismatches != {legacy}
             or set(state['inputs']) != {legacy, files.phased_snps_vcf}
             or set(state['outputs']) != {files.phased_blocks}
             or state['command'] != phased_blocks_command(sample, path, legacy, files.phased_snps_vcf)):
         return False
+    return validate_existing_blocks(files, sample)
+
+
+def validate_existing_blocks(files, sample):
+    path = files.phased_blocks
+    from IGenotyper.command_lines.snps import Snps, write_chromosome_lengths
     validate_vcf(files.phased_snps_vcf, sample)
     before = signatures([files.ref, files.ref + '.fai', files.phased_snps_vcf, path])
     with tempfile.TemporaryDirectory(prefix='.check-legacy-blocks-', dir=files.log) as work:
@@ -121,6 +127,45 @@ def recover_legacy_blocks(files, sample, path, state, mismatches):
     return True
 
 
+class LegacyPhasingError(RuntimeError):
+    """Unverifiable old results must not be automatically overwritten."""
+
+
+def adopt_untracked_phasing(files, expected):
+    """Validate old completed runs that predate command success receipts."""
+    try:
+        validate_final_outputs(files, expected['sample'])
+        completed_at = Path(files.input_args).stat().st_mtime_ns
+        if any(Path(path).stat().st_mtime_ns > completed_at for path in expected['inputs']):
+            raise ValueError('An input or reference is newer than the saved completed run')
+        # Compare the phased VCF with retained source variants when available.
+        # A parseable but truncated phased VCF is not adequate evidence.
+        source_vcf = expected['input_vcf'] or getattr(files, 'snps_vcf', None)
+        if not source_vcf or not non_emptyfile(source_vcf):
+            raise ValueError('Missing source VCF needed to verify legacy phased variant completeness')
+        if Path(source_vcf + '.success.json').exists():
+            valid_command_receipt(source_vcf)
+        sites = validate_vcf(source_vcf, expected['sample'])
+        validate_vcf(files.phased_snps_vcf, expected['sample'], expected=sites)
+        with pysam.AlignmentFile(files.ccs_to_ref_phased, 'rb') as bam:
+            with open(files.ref + '.fai') as stream:
+                reference = {fields[0]: int(fields[1]) for fields in
+                             (line.rstrip().split('\t') for line in stream)}
+            if dict(zip(bam.references, bam.lengths)) != reference:
+                raise ValueError('Phased BAM reference dictionary does not match the reference index')
+        if not validate_existing_blocks(files, expected['sample']):
+            raise ValueError('Legacy phase blocks do not match the phased VCF')
+        record_completion(files, expected)
+        print('Adopted completed legacy phasing; existing BAM, variants and reports are unchanged.')
+        return True
+    except (OSError, ValueError, RuntimeError, KeyError, TypeError, subprocess.CalledProcessError, pysam.SamtoolsError) as error:
+        raise LegacyPhasingError(
+            'Existing legacy phasing could not be validated: %s. '
+            'No rephasing was started and existing results were preserved. '
+            'Restore the missing completion evidence or use a new output directory to rephase.' % error
+        ) from error
+
+
 def phasing_complete(files, expected):
     marker = receipt_path(files)
     try:
@@ -134,6 +179,10 @@ def phasing_complete(files, expected):
                 os.path.abspath(args['bam']) != os.path.abspath(files.input_bam) or
                 (os.path.abspath(args['input_vcf']) if args.get('input_vcf') else None) != expected['input_vcf']):
             return False
+        terminal_paths = [files.ccs_to_ref_phased, files.phased_snps_vcf,
+                          files.phased_blocks, files.plot_phasing, files.plot_gene_cov]
+        if not any(Path(path + '.success.json').exists() for path in terminal_paths):
+            return adopt_untracked_phasing(files, expected)
         # Adoption requires proof of successful commands, not merely a parseable
         # partial VCF. These receipts also lead back to mapping and conversion.
         sources = set()
@@ -151,5 +200,7 @@ def phasing_complete(files, expected):
             return False
         record_completion(files, expected)
         return True
+    except LegacyPhasingError:
+        raise
     except (OSError, ValueError, RuntimeError, KeyError, TypeError, subprocess.CalledProcessError):
         return False
